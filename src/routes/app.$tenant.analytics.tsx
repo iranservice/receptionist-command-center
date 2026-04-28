@@ -175,7 +175,13 @@ function TenantAnalytics() {
             </div>
             <ul className="mt-4 space-y-3 text-sm">
               {[
-                { name: "WhatsApp", icon: MessageSquare, value: 812, pct: 63, cls: "bg-success/60" },
+                {
+                  name: "WhatsApp",
+                  icon: MessageSquare,
+                  value: 812,
+                  pct: 63,
+                  cls: "bg-success/60",
+                },
                 { name: "Web chat", icon: Globe, value: 268, pct: 21, cls: "bg-primary/60" },
                 { name: "SMS", icon: Phone, value: 142, pct: 11, cls: "bg-chart-3/70" },
                 { name: "Email", icon: Mail, value: 62, pct: 5, cls: "bg-chart-2/70" },
@@ -205,7 +211,9 @@ function TenantAnalytics() {
             <div className="flex items-start justify-between">
               <div>
                 <h3 className="font-display text-sm font-semibold">Approvals · 7d</h3>
-                <p className="text-xs text-muted-foreground">Internal sign-off — not customer confirmation</p>
+                <p className="text-xs text-muted-foreground">
+                  Internal sign-off — not customer confirmation
+                </p>
               </div>
               <ShieldAlert className="h-4 w-4 text-warn" />
             </div>
@@ -226,7 +234,9 @@ function TenantAnalytics() {
             <div className="flex items-start justify-between">
               <div>
                 <h3 className="font-display text-sm font-semibold">Operational states</h3>
-                <p className="text-xs text-muted-foreground">Distribution across active conversations</p>
+                <p className="text-xs text-muted-foreground">
+                  Distribution across active conversations
+                </p>
               </div>
             </div>
             <ul className="mt-4 grid grid-cols-1 gap-2 sm:grid-cols-2">
@@ -265,9 +275,7 @@ function TenantAnalytics() {
               </Badge>
             </div>
             <div className="mt-5 flex h-32 items-end gap-2">
-              {[
-                32, 41, 38, 52, 49, 60, 55, 68, 64, 72, 70, 81, 76, 88,
-              ].map((v, i) => (
+              {[32, 41, 38, 52, 49, 60, 55, 68, 64, 72, 70, 81, 76, 88].map((v, i) => (
                 <div key={i} className="flex flex-1 flex-col items-stretch gap-px">
                   <div
                     className="rounded-sm bg-ai/70"
@@ -373,7 +381,9 @@ function WatchItem({
       : "bg-warn/20 text-warn-foreground border-warn/40";
   return (
     <Card className="flex items-start gap-3 p-4 shadow-xs">
-      <span className={cn("flex h-8 w-8 shrink-0 items-center justify-center rounded-md border", cls)}>
+      <span
+        className={cn("flex h-8 w-8 shrink-0 items-center justify-center rounded-md border", cls)}
+      >
         <Icon className="h-4 w-4" />
       </span>
       <div className="min-w-0">

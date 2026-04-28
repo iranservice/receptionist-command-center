@@ -107,9 +107,7 @@ export const demoApprovals: Approval[] = [
       { label: "Reason", value: "Customer no-show" },
       { label: "Refund implied", value: "No (paid offline)" },
     ],
-    audit: [
-      { at: "11:57", actor: "Sara Conti", event: "Submitted cancellation request" },
-    ],
+    audit: [{ at: "11:57", actor: "Sara Conti", event: "Submitted cancellation request" }],
   },
   {
     id: "APV-1040",
@@ -191,7 +189,11 @@ export const demoApprovals: Approval[] = [
       customerName: "Giulia Romano",
     },
     availableActions: ["view_context"],
-    resolution: { by: "Sara Conti", atLabel: "Yesterday · 18:14", note: "Approved — invoice sent." },
+    resolution: {
+      by: "Sara Conti",
+      atLabel: "Yesterday · 18:14",
+      note: "Approved — invoice sent.",
+    },
   },
   {
     id: "APV-1035",

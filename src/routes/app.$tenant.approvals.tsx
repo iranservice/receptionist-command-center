@@ -30,6 +30,7 @@ import { cn } from "@/lib/utils";
 
 export const Route = createFileRoute("/app/$tenant/approvals")({
   component: ApprovalsPage,
+  head: () => ({ meta: [{ title: "Approvals · Workspace" }] }),
 });
 
 const FILTERS: { key: "pending" | "all" | ApprovalStatus; label: string }[] = [
@@ -123,16 +124,16 @@ function ApprovalsPage() {
               <ShieldAlert className="h-3.5 w-3.5" />
             </span>
             <span>
-              <span className="font-semibold">Internal approval</span> — decision by an
-              authorized human (admin/operator) on a sensitive operation.
+              <span className="font-semibold">Internal approval</span> — decision by an authorized
+              human (admin/operator) on a sensitive operation.
             </span>
           </div>
           <span className="hidden text-muted-foreground md:inline">·</span>
           <div className="flex items-center gap-2 text-muted-foreground">
             <Info className="h-3.5 w-3.5" />
             <span>
-              <span className="font-semibold text-foreground">Customer confirmation</span>{" "}
-              lives on the order in the conversation — not here.
+              <span className="font-semibold text-foreground">Customer confirmation</span> lives on
+              the order in the conversation — not here.
             </span>
           </div>
         </div>
@@ -243,9 +244,7 @@ function ApprovalsPage() {
                     />
                     <div className="min-w-0">
                       <div className="flex flex-wrap items-center gap-1.5">
-                        <span className="font-mono text-[11px] text-muted-foreground">
-                          {a.id}
-                        </span>
+                        <span className="font-mono text-[11px] text-muted-foreground">{a.id}</span>
                         <span className="text-[11px] text-muted-foreground">·</span>
                         <span className="text-[11px] font-medium uppercase tracking-wider text-muted-foreground">
                           {APPROVAL_TYPE_LABEL[a.type]}
@@ -263,9 +262,7 @@ function ApprovalsPage() {
                         {a.related.customerName && (
                           <>
                             <span>·</span>
-                            <span className="text-foreground/80">
-                              {a.related.customerName}
-                            </span>
+                            <span className="text-foreground/80">{a.related.customerName}</span>
                           </>
                         )}
                         {a.related.conversationId && (
@@ -310,8 +307,8 @@ function EmptyState({ filter }: { filter: string }) {
       </span>
       <h3 className="font-display text-sm font-semibold">Nothing here</h3>
       <p className="max-w-sm text-xs text-muted-foreground">
-        No {filter === "all" ? "" : filter} approvals match your search. New requests will
-        appear here as soon as the backend raises them.
+        No {filter === "all" ? "" : filter} approvals match your search. New requests will appear
+        here as soon as the backend raises them.
       </p>
     </Card>
   );

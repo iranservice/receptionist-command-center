@@ -27,13 +27,7 @@ export function OpStateBadge({
   );
 }
 
-export function SeverityBadge({
-  severity,
-  className,
-}: {
-  severity: Severity;
-  className?: string;
-}) {
+export function SeverityBadge({ severity, className }: { severity: Severity; className?: string }) {
   const m = SEVERITY[severity];
   return (
     <span

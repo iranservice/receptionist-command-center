@@ -9,11 +9,7 @@ import { Button } from "@/components/ui/button";
 import { Separator } from "@/components/ui/separator";
 import { Link, useParams } from "@tanstack/react-router";
 import { OpStateBadge, SeverityBadge } from "@/components/state/OpStateBadge";
-import {
-  APPROVAL_TYPE_LABEL,
-  type Approval,
-  type ApprovalAction,
-} from "@/lib/approvals-data";
+import { APPROVAL_TYPE_LABEL, type Approval, type ApprovalAction } from "@/lib/approvals-data";
 import {
   Bot,
   User,
@@ -66,18 +62,13 @@ export function ApprovalDrawer({
 
   return (
     <Sheet open={open} onOpenChange={onOpenChange}>
-      <SheetContent
-        side="right"
-        className="flex w-full flex-col gap-0 p-0 sm:max-w-[520px]"
-      >
+      <SheetContent side="right" className="flex w-full flex-col gap-0 p-0 sm:max-w-[520px]">
         <SheetHeader className="border-b px-5 py-4">
           <div className="flex items-start gap-3">
             <RequesterIcon role={approval.requestedByRole} />
             <div className="min-w-0 flex-1">
               <div className="flex flex-wrap items-center gap-1.5">
-                <span className="font-mono text-[11px] text-muted-foreground">
-                  {approval.id}
-                </span>
+                <span className="font-mono text-[11px] text-muted-foreground">{approval.id}</span>
                 <span className="text-[11px] text-muted-foreground">·</span>
                 <span className="text-[11px] font-medium uppercase tracking-wider text-muted-foreground">
                   {APPROVAL_TYPE_LABEL[approval.type]}
@@ -107,9 +98,9 @@ export function ApprovalDrawer({
           <div className="mx-5 mt-4 flex items-start gap-2 rounded-md border border-level-b/30 bg-level-b/10 px-3 py-2 text-xs text-foreground/85">
             <Info className="mt-0.5 h-3.5 w-3.5 shrink-0 text-level-b" />
             <span>
-              <span className="font-semibold">Internal approval</span> — decision by an
-              authorized human. This is <span className="font-semibold">not</span> the
-              customer-confirmation flow.
+              <span className="font-semibold">Internal approval</span> — decision by an authorized
+              human. This is <span className="font-semibold">not</span> the customer-confirmation
+              flow.
             </span>
           </div>
 
@@ -209,9 +200,7 @@ export function ApprovalDrawer({
                     </span>
                   </div>
                   {approval.resolution.note && (
-                    <p className="mt-1 text-sm text-foreground/80">
-                      {approval.resolution.note}
-                    </p>
+                    <p className="mt-1 text-sm text-foreground/80">{approval.resolution.note}</p>
                   )}
                 </div>
               </section>
@@ -232,9 +221,7 @@ export function ApprovalDrawer({
                     <div className="min-w-0 flex-1">
                       <div className="flex items-center justify-between gap-2">
                         <span className="font-medium">{a.actor}</span>
-                        <span className="font-mono text-[11px] text-muted-foreground">
-                          {a.at}
-                        </span>
+                        <span className="font-mono text-[11px] text-muted-foreground">{a.at}</span>
                       </div>
                       <div className="text-xs text-muted-foreground">{a.event}</div>
                     </div>
