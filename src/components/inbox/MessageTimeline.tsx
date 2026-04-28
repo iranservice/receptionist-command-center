@@ -1,4 +1,14 @@
-import { Bot, User, ArrowRightLeft, ShoppingBag, BadgeCheck, Radio, UserCheck } from "lucide-react";
+import {
+  Bot,
+  User,
+  ArrowRightLeft,
+  ShoppingBag,
+  BadgeCheck,
+  Radio,
+  UserCheck,
+  CheckCircle2,
+  XCircle,
+} from "lucide-react";
 import type { Message } from "@/lib/inbox-data";
 import { SenderTag } from "./state-badges";
 import { cn } from "@/lib/utils";
@@ -18,8 +28,19 @@ const systemIcon = {
   assigned: UserCheck,
   order_created: ShoppingBag,
   confirmation_requested: BadgeCheck,
+  order_confirmed: CheckCircle2,
+  order_cancelled: XCircle,
   channel_event: Radio,
 } as const;
+
+// Order-related system events get a subtle accent so the timeline reflects
+// order lifecycle without becoming noisy.
+const orderEventTone: Partial<Record<NonNullable<Message["systemKind"]>, string>> = {
+  order_created: "border-primary/30 bg-primary/8 text-foreground",
+  confirmation_requested: "border-warn/40 bg-warn/15 text-warn-foreground",
+  order_confirmed: "border-success/30 bg-success/12 text-success",
+  order_cancelled: "border-destructive/30 bg-destructive/10 text-destructive",
+};
 
 export function MessageTimeline({ messages }: { messages: Message[] }) {
   return (
