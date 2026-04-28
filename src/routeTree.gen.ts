@@ -21,6 +21,17 @@ import { Route as PlatformPlansRouteImport } from './routes/platform.plans'
 import { Route as PlatformMembersRouteImport } from './routes/platform.members'
 import { Route as PlatformAnalyticsRouteImport } from './routes/platform.analytics'
 import { Route as AppTenantRouteImport } from './routes/app.$tenant'
+import { Route as AppTenantIndexRouteImport } from './routes/app.$tenant.index'
+import { Route as AppTenantTicketsRouteImport } from './routes/app.$tenant.tickets'
+import { Route as AppTenantSettingsRouteImport } from './routes/app.$tenant.settings'
+import { Route as AppTenantReservationsRouteImport } from './routes/app.$tenant.reservations'
+import { Route as AppTenantOrdersRouteImport } from './routes/app.$tenant.orders'
+import { Route as AppTenantMembersRouteImport } from './routes/app.$tenant.members'
+import { Route as AppTenantIntegrationsRouteImport } from './routes/app.$tenant.integrations'
+import { Route as AppTenantInboxRouteImport } from './routes/app.$tenant.inbox'
+import { Route as AppTenantCustomersRouteImport } from './routes/app.$tenant.customers'
+import { Route as AppTenantApprovalsRouteImport } from './routes/app.$tenant.approvals'
+import { Route as AppTenantAnalyticsRouteImport } from './routes/app.$tenant.analytics'
 
 const PlatformRoute = PlatformRouteImport.update({
   id: '/platform',
@@ -82,11 +93,66 @@ const AppTenantRoute = AppTenantRouteImport.update({
   path: '/app/$tenant',
   getParentRoute: () => rootRouteImport,
 } as any)
+const AppTenantIndexRoute = AppTenantIndexRouteImport.update({
+  id: '/',
+  path: '/',
+  getParentRoute: () => AppTenantRoute,
+} as any)
+const AppTenantTicketsRoute = AppTenantTicketsRouteImport.update({
+  id: '/tickets',
+  path: '/tickets',
+  getParentRoute: () => AppTenantRoute,
+} as any)
+const AppTenantSettingsRoute = AppTenantSettingsRouteImport.update({
+  id: '/settings',
+  path: '/settings',
+  getParentRoute: () => AppTenantRoute,
+} as any)
+const AppTenantReservationsRoute = AppTenantReservationsRouteImport.update({
+  id: '/reservations',
+  path: '/reservations',
+  getParentRoute: () => AppTenantRoute,
+} as any)
+const AppTenantOrdersRoute = AppTenantOrdersRouteImport.update({
+  id: '/orders',
+  path: '/orders',
+  getParentRoute: () => AppTenantRoute,
+} as any)
+const AppTenantMembersRoute = AppTenantMembersRouteImport.update({
+  id: '/members',
+  path: '/members',
+  getParentRoute: () => AppTenantRoute,
+} as any)
+const AppTenantIntegrationsRoute = AppTenantIntegrationsRouteImport.update({
+  id: '/integrations',
+  path: '/integrations',
+  getParentRoute: () => AppTenantRoute,
+} as any)
+const AppTenantInboxRoute = AppTenantInboxRouteImport.update({
+  id: '/inbox',
+  path: '/inbox',
+  getParentRoute: () => AppTenantRoute,
+} as any)
+const AppTenantCustomersRoute = AppTenantCustomersRouteImport.update({
+  id: '/customers',
+  path: '/customers',
+  getParentRoute: () => AppTenantRoute,
+} as any)
+const AppTenantApprovalsRoute = AppTenantApprovalsRouteImport.update({
+  id: '/approvals',
+  path: '/approvals',
+  getParentRoute: () => AppTenantRoute,
+} as any)
+const AppTenantAnalyticsRoute = AppTenantAnalyticsRouteImport.update({
+  id: '/analytics',
+  path: '/analytics',
+  getParentRoute: () => AppTenantRoute,
+} as any)
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
   '/platform': typeof PlatformRouteWithChildren
-  '/app/$tenant': typeof AppTenantRoute
+  '/app/$tenant': typeof AppTenantRouteWithChildren
   '/platform/analytics': typeof PlatformAnalyticsRoute
   '/platform/members': typeof PlatformMembersRoute
   '/platform/plans': typeof PlatformPlansRoute
@@ -96,10 +162,20 @@ export interface FileRoutesByFullPath {
   '/platform/system': typeof PlatformSystemRoute
   '/platform/tenants': typeof PlatformTenantsRoute
   '/platform/': typeof PlatformIndexRoute
+  '/app/$tenant/analytics': typeof AppTenantAnalyticsRoute
+  '/app/$tenant/approvals': typeof AppTenantApprovalsRoute
+  '/app/$tenant/customers': typeof AppTenantCustomersRoute
+  '/app/$tenant/inbox': typeof AppTenantInboxRoute
+  '/app/$tenant/integrations': typeof AppTenantIntegrationsRoute
+  '/app/$tenant/members': typeof AppTenantMembersRoute
+  '/app/$tenant/orders': typeof AppTenantOrdersRoute
+  '/app/$tenant/reservations': typeof AppTenantReservationsRoute
+  '/app/$tenant/settings': typeof AppTenantSettingsRoute
+  '/app/$tenant/tickets': typeof AppTenantTicketsRoute
+  '/app/$tenant/': typeof AppTenantIndexRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
-  '/app/$tenant': typeof AppTenantRoute
   '/platform/analytics': typeof PlatformAnalyticsRoute
   '/platform/members': typeof PlatformMembersRoute
   '/platform/plans': typeof PlatformPlansRoute
@@ -109,12 +185,23 @@ export interface FileRoutesByTo {
   '/platform/system': typeof PlatformSystemRoute
   '/platform/tenants': typeof PlatformTenantsRoute
   '/platform': typeof PlatformIndexRoute
+  '/app/$tenant/analytics': typeof AppTenantAnalyticsRoute
+  '/app/$tenant/approvals': typeof AppTenantApprovalsRoute
+  '/app/$tenant/customers': typeof AppTenantCustomersRoute
+  '/app/$tenant/inbox': typeof AppTenantInboxRoute
+  '/app/$tenant/integrations': typeof AppTenantIntegrationsRoute
+  '/app/$tenant/members': typeof AppTenantMembersRoute
+  '/app/$tenant/orders': typeof AppTenantOrdersRoute
+  '/app/$tenant/reservations': typeof AppTenantReservationsRoute
+  '/app/$tenant/settings': typeof AppTenantSettingsRoute
+  '/app/$tenant/tickets': typeof AppTenantTicketsRoute
+  '/app/$tenant': typeof AppTenantIndexRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
   '/': typeof IndexRoute
   '/platform': typeof PlatformRouteWithChildren
-  '/app/$tenant': typeof AppTenantRoute
+  '/app/$tenant': typeof AppTenantRouteWithChildren
   '/platform/analytics': typeof PlatformAnalyticsRoute
   '/platform/members': typeof PlatformMembersRoute
   '/platform/plans': typeof PlatformPlansRoute
@@ -124,6 +211,17 @@ export interface FileRoutesById {
   '/platform/system': typeof PlatformSystemRoute
   '/platform/tenants': typeof PlatformTenantsRoute
   '/platform/': typeof PlatformIndexRoute
+  '/app/$tenant/analytics': typeof AppTenantAnalyticsRoute
+  '/app/$tenant/approvals': typeof AppTenantApprovalsRoute
+  '/app/$tenant/customers': typeof AppTenantCustomersRoute
+  '/app/$tenant/inbox': typeof AppTenantInboxRoute
+  '/app/$tenant/integrations': typeof AppTenantIntegrationsRoute
+  '/app/$tenant/members': typeof AppTenantMembersRoute
+  '/app/$tenant/orders': typeof AppTenantOrdersRoute
+  '/app/$tenant/reservations': typeof AppTenantReservationsRoute
+  '/app/$tenant/settings': typeof AppTenantSettingsRoute
+  '/app/$tenant/tickets': typeof AppTenantTicketsRoute
+  '/app/$tenant/': typeof AppTenantIndexRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
@@ -140,10 +238,20 @@ export interface FileRouteTypes {
     | '/platform/system'
     | '/platform/tenants'
     | '/platform/'
+    | '/app/$tenant/analytics'
+    | '/app/$tenant/approvals'
+    | '/app/$tenant/customers'
+    | '/app/$tenant/inbox'
+    | '/app/$tenant/integrations'
+    | '/app/$tenant/members'
+    | '/app/$tenant/orders'
+    | '/app/$tenant/reservations'
+    | '/app/$tenant/settings'
+    | '/app/$tenant/tickets'
+    | '/app/$tenant/'
   fileRoutesByTo: FileRoutesByTo
   to:
     | '/'
-    | '/app/$tenant'
     | '/platform/analytics'
     | '/platform/members'
     | '/platform/plans'
@@ -153,6 +261,17 @@ export interface FileRouteTypes {
     | '/platform/system'
     | '/platform/tenants'
     | '/platform'
+    | '/app/$tenant/analytics'
+    | '/app/$tenant/approvals'
+    | '/app/$tenant/customers'
+    | '/app/$tenant/inbox'
+    | '/app/$tenant/integrations'
+    | '/app/$tenant/members'
+    | '/app/$tenant/orders'
+    | '/app/$tenant/reservations'
+    | '/app/$tenant/settings'
+    | '/app/$tenant/tickets'
+    | '/app/$tenant'
   id:
     | '__root__'
     | '/'
@@ -167,12 +286,23 @@ export interface FileRouteTypes {
     | '/platform/system'
     | '/platform/tenants'
     | '/platform/'
+    | '/app/$tenant/analytics'
+    | '/app/$tenant/approvals'
+    | '/app/$tenant/customers'
+    | '/app/$tenant/inbox'
+    | '/app/$tenant/integrations'
+    | '/app/$tenant/members'
+    | '/app/$tenant/orders'
+    | '/app/$tenant/reservations'
+    | '/app/$tenant/settings'
+    | '/app/$tenant/tickets'
+    | '/app/$tenant/'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
   PlatformRoute: typeof PlatformRouteWithChildren
-  AppTenantRoute: typeof AppTenantRoute
+  AppTenantRoute: typeof AppTenantRouteWithChildren
 }
 
 declare module '@tanstack/react-router' {
@@ -261,6 +391,83 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AppTenantRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/app/$tenant/': {
+      id: '/app/$tenant/'
+      path: '/'
+      fullPath: '/app/$tenant/'
+      preLoaderRoute: typeof AppTenantIndexRouteImport
+      parentRoute: typeof AppTenantRoute
+    }
+    '/app/$tenant/tickets': {
+      id: '/app/$tenant/tickets'
+      path: '/tickets'
+      fullPath: '/app/$tenant/tickets'
+      preLoaderRoute: typeof AppTenantTicketsRouteImport
+      parentRoute: typeof AppTenantRoute
+    }
+    '/app/$tenant/settings': {
+      id: '/app/$tenant/settings'
+      path: '/settings'
+      fullPath: '/app/$tenant/settings'
+      preLoaderRoute: typeof AppTenantSettingsRouteImport
+      parentRoute: typeof AppTenantRoute
+    }
+    '/app/$tenant/reservations': {
+      id: '/app/$tenant/reservations'
+      path: '/reservations'
+      fullPath: '/app/$tenant/reservations'
+      preLoaderRoute: typeof AppTenantReservationsRouteImport
+      parentRoute: typeof AppTenantRoute
+    }
+    '/app/$tenant/orders': {
+      id: '/app/$tenant/orders'
+      path: '/orders'
+      fullPath: '/app/$tenant/orders'
+      preLoaderRoute: typeof AppTenantOrdersRouteImport
+      parentRoute: typeof AppTenantRoute
+    }
+    '/app/$tenant/members': {
+      id: '/app/$tenant/members'
+      path: '/members'
+      fullPath: '/app/$tenant/members'
+      preLoaderRoute: typeof AppTenantMembersRouteImport
+      parentRoute: typeof AppTenantRoute
+    }
+    '/app/$tenant/integrations': {
+      id: '/app/$tenant/integrations'
+      path: '/integrations'
+      fullPath: '/app/$tenant/integrations'
+      preLoaderRoute: typeof AppTenantIntegrationsRouteImport
+      parentRoute: typeof AppTenantRoute
+    }
+    '/app/$tenant/inbox': {
+      id: '/app/$tenant/inbox'
+      path: '/inbox'
+      fullPath: '/app/$tenant/inbox'
+      preLoaderRoute: typeof AppTenantInboxRouteImport
+      parentRoute: typeof AppTenantRoute
+    }
+    '/app/$tenant/customers': {
+      id: '/app/$tenant/customers'
+      path: '/customers'
+      fullPath: '/app/$tenant/customers'
+      preLoaderRoute: typeof AppTenantCustomersRouteImport
+      parentRoute: typeof AppTenantRoute
+    }
+    '/app/$tenant/approvals': {
+      id: '/app/$tenant/approvals'
+      path: '/approvals'
+      fullPath: '/app/$tenant/approvals'
+      preLoaderRoute: typeof AppTenantApprovalsRouteImport
+      parentRoute: typeof AppTenantRoute
+    }
+    '/app/$tenant/analytics': {
+      id: '/app/$tenant/analytics'
+      path: '/analytics'
+      fullPath: '/app/$tenant/analytics'
+      preLoaderRoute: typeof AppTenantAnalyticsRouteImport
+      parentRoute: typeof AppTenantRoute
+    }
   }
 }
 
@@ -292,10 +499,42 @@ const PlatformRouteWithChildren = PlatformRoute._addFileChildren(
   PlatformRouteChildren,
 )
 
+interface AppTenantRouteChildren {
+  AppTenantAnalyticsRoute: typeof AppTenantAnalyticsRoute
+  AppTenantApprovalsRoute: typeof AppTenantApprovalsRoute
+  AppTenantCustomersRoute: typeof AppTenantCustomersRoute
+  AppTenantInboxRoute: typeof AppTenantInboxRoute
+  AppTenantIntegrationsRoute: typeof AppTenantIntegrationsRoute
+  AppTenantMembersRoute: typeof AppTenantMembersRoute
+  AppTenantOrdersRoute: typeof AppTenantOrdersRoute
+  AppTenantReservationsRoute: typeof AppTenantReservationsRoute
+  AppTenantSettingsRoute: typeof AppTenantSettingsRoute
+  AppTenantTicketsRoute: typeof AppTenantTicketsRoute
+  AppTenantIndexRoute: typeof AppTenantIndexRoute
+}
+
+const AppTenantRouteChildren: AppTenantRouteChildren = {
+  AppTenantAnalyticsRoute: AppTenantAnalyticsRoute,
+  AppTenantApprovalsRoute: AppTenantApprovalsRoute,
+  AppTenantCustomersRoute: AppTenantCustomersRoute,
+  AppTenantInboxRoute: AppTenantInboxRoute,
+  AppTenantIntegrationsRoute: AppTenantIntegrationsRoute,
+  AppTenantMembersRoute: AppTenantMembersRoute,
+  AppTenantOrdersRoute: AppTenantOrdersRoute,
+  AppTenantReservationsRoute: AppTenantReservationsRoute,
+  AppTenantSettingsRoute: AppTenantSettingsRoute,
+  AppTenantTicketsRoute: AppTenantTicketsRoute,
+  AppTenantIndexRoute: AppTenantIndexRoute,
+}
+
+const AppTenantRouteWithChildren = AppTenantRoute._addFileChildren(
+  AppTenantRouteChildren,
+)
+
 const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
   PlatformRoute: PlatformRouteWithChildren,
-  AppTenantRoute: AppTenantRoute,
+  AppTenantRoute: AppTenantRouteWithChildren,
 }
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)
