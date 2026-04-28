@@ -58,15 +58,31 @@ export function TopBar({
 
         {/* Right cluster */}
         <div className="ml-auto flex items-center gap-1.5">
-          <button className="hidden h-8 items-center gap-2 rounded-md border bg-card px-2.5 text-xs text-muted-foreground shadow-xs transition-colors hover:bg-accent md:inline-flex">
+          <button
+            className="hidden h-8 items-center gap-2 rounded-md border bg-card px-2.5 text-xs text-muted-foreground shadow-xs transition-colors hover:bg-accent lg:inline-flex"
+            aria-label="Search conversations and customers"
+          >
             <Search className="h-3.5 w-3.5" />
             <span>Search conversations, customers…</span>
             <kbd className="ml-3 rounded border bg-muted px-1.5 py-0.5 font-mono text-[10px] text-muted-foreground/80">
               ⌘K
             </kbd>
           </button>
+          <Button
+            variant="ghost"
+            size="icon"
+            className="h-8 w-8 lg:hidden"
+            aria-label="Search"
+          >
+            <Search className="h-4 w-4" />
+          </Button>
 
-          <Button variant="ghost" size="icon" className="h-8 w-8" aria-label="Help">
+          <Button
+            variant="ghost"
+            size="icon"
+            className="hidden h-8 w-8 sm:inline-flex"
+            aria-label="Help"
+          >
             <HelpCircle className="h-4 w-4" />
           </Button>
 
@@ -80,7 +96,12 @@ export function TopBar({
             <span className="absolute right-1.5 top-1.5 h-2 w-2 rounded-full bg-destructive ring-2 ring-background" />
           </Button>
 
-          <Button variant="ghost" size="icon" className="h-8 w-8" aria-label="Settings">
+          <Button
+            variant="ghost"
+            size="icon"
+            className="hidden h-8 w-8 sm:inline-flex"
+            aria-label="Settings"
+          >
             <Settings className="h-4 w-4" />
           </Button>
 
