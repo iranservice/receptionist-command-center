@@ -23,7 +23,6 @@ import { Route as PlatformAnalyticsRouteImport } from './routes/platform.analyti
 import { Route as AppTenantRouteImport } from './routes/app.$tenant'
 import { Route as AppTenantIndexRouteImport } from './routes/app.$tenant.index'
 import { Route as AppTenantTicketsRouteImport } from './routes/app.$tenant.tickets'
-import { Route as AppTenantSetupRouteImport } from './routes/app.$tenant.setup'
 import { Route as AppTenantSettingsRouteImport } from './routes/app.$tenant.settings'
 import { Route as AppTenantReservationsRouteImport } from './routes/app.$tenant.reservations'
 import { Route as AppTenantOrdersRouteImport } from './routes/app.$tenant.orders'
@@ -104,11 +103,6 @@ const AppTenantTicketsRoute = AppTenantTicketsRouteImport.update({
   path: '/tickets',
   getParentRoute: () => AppTenantRoute,
 } as any)
-const AppTenantSetupRoute = AppTenantSetupRouteImport.update({
-  id: '/setup',
-  path: '/setup',
-  getParentRoute: () => AppTenantRoute,
-} as any)
 const AppTenantSettingsRoute = AppTenantSettingsRouteImport.update({
   id: '/settings',
   path: '/settings',
@@ -177,7 +171,6 @@ export interface FileRoutesByFullPath {
   '/app/$tenant/orders': typeof AppTenantOrdersRoute
   '/app/$tenant/reservations': typeof AppTenantReservationsRoute
   '/app/$tenant/settings': typeof AppTenantSettingsRoute
-  '/app/$tenant/setup': typeof AppTenantSetupRoute
   '/app/$tenant/tickets': typeof AppTenantTicketsRoute
   '/app/$tenant/': typeof AppTenantIndexRoute
 }
@@ -201,7 +194,6 @@ export interface FileRoutesByTo {
   '/app/$tenant/orders': typeof AppTenantOrdersRoute
   '/app/$tenant/reservations': typeof AppTenantReservationsRoute
   '/app/$tenant/settings': typeof AppTenantSettingsRoute
-  '/app/$tenant/setup': typeof AppTenantSetupRoute
   '/app/$tenant/tickets': typeof AppTenantTicketsRoute
   '/app/$tenant': typeof AppTenantIndexRoute
 }
@@ -228,7 +220,6 @@ export interface FileRoutesById {
   '/app/$tenant/orders': typeof AppTenantOrdersRoute
   '/app/$tenant/reservations': typeof AppTenantReservationsRoute
   '/app/$tenant/settings': typeof AppTenantSettingsRoute
-  '/app/$tenant/setup': typeof AppTenantSetupRoute
   '/app/$tenant/tickets': typeof AppTenantTicketsRoute
   '/app/$tenant/': typeof AppTenantIndexRoute
 }
@@ -256,7 +247,6 @@ export interface FileRouteTypes {
     | '/app/$tenant/orders'
     | '/app/$tenant/reservations'
     | '/app/$tenant/settings'
-    | '/app/$tenant/setup'
     | '/app/$tenant/tickets'
     | '/app/$tenant/'
   fileRoutesByTo: FileRoutesByTo
@@ -280,7 +270,6 @@ export interface FileRouteTypes {
     | '/app/$tenant/orders'
     | '/app/$tenant/reservations'
     | '/app/$tenant/settings'
-    | '/app/$tenant/setup'
     | '/app/$tenant/tickets'
     | '/app/$tenant'
   id:
@@ -306,7 +295,6 @@ export interface FileRouteTypes {
     | '/app/$tenant/orders'
     | '/app/$tenant/reservations'
     | '/app/$tenant/settings'
-    | '/app/$tenant/setup'
     | '/app/$tenant/tickets'
     | '/app/$tenant/'
   fileRoutesById: FileRoutesById
@@ -417,13 +405,6 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AppTenantTicketsRouteImport
       parentRoute: typeof AppTenantRoute
     }
-    '/app/$tenant/setup': {
-      id: '/app/$tenant/setup'
-      path: '/setup'
-      fullPath: '/app/$tenant/setup'
-      preLoaderRoute: typeof AppTenantSetupRouteImport
-      parentRoute: typeof AppTenantRoute
-    }
     '/app/$tenant/settings': {
       id: '/app/$tenant/settings'
       path: '/settings'
@@ -528,7 +509,6 @@ interface AppTenantRouteChildren {
   AppTenantOrdersRoute: typeof AppTenantOrdersRoute
   AppTenantReservationsRoute: typeof AppTenantReservationsRoute
   AppTenantSettingsRoute: typeof AppTenantSettingsRoute
-  AppTenantSetupRoute: typeof AppTenantSetupRoute
   AppTenantTicketsRoute: typeof AppTenantTicketsRoute
   AppTenantIndexRoute: typeof AppTenantIndexRoute
 }
@@ -543,7 +523,6 @@ const AppTenantRouteChildren: AppTenantRouteChildren = {
   AppTenantOrdersRoute: AppTenantOrdersRoute,
   AppTenantReservationsRoute: AppTenantReservationsRoute,
   AppTenantSettingsRoute: AppTenantSettingsRoute,
-  AppTenantSetupRoute: AppTenantSetupRoute,
   AppTenantTicketsRoute: AppTenantTicketsRoute,
   AppTenantIndexRoute: AppTenantIndexRoute,
 }
