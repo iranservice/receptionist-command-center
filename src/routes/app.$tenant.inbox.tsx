@@ -13,7 +13,6 @@ import {
   CircleAlert,
   ArrowRightLeft,
   PanelRight,
-  X,
 } from "lucide-react";
 import { conversations as demoConversations, type Conversation } from "@/lib/inbox-data";
 import { StatusBadge, ChannelBadge, OwnerBadge } from "@/components/inbox/state-badges";
