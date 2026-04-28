@@ -140,10 +140,7 @@ export function LoadingState({
       )}
     >
       <Loader2
-        className={cn(
-          "animate-spin text-muted-foreground",
-          size === "sm" ? "h-5 w-5" : "h-6 w-6",
-        )}
+        className={cn("animate-spin text-muted-foreground", size === "sm" ? "h-5 w-5" : "h-6 w-6")}
       />
       <div className="max-w-md space-y-0.5">
         <p className={cn("font-medium", size === "sm" ? "text-sm" : "text-base")}>{title}</p>

@@ -68,12 +68,7 @@ export function TopBar({
               ⌘K
             </kbd>
           </button>
-          <Button
-            variant="ghost"
-            size="icon"
-            className="h-8 w-8 lg:hidden"
-            aria-label="Search"
-          >
+          <Button variant="ghost" size="icon" className="h-8 w-8 lg:hidden" aria-label="Search">
             <Search className="h-4 w-4" />
           </Button>
 
