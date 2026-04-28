@@ -324,3 +324,27 @@ function TenantDashboard() {
     </>
   );
 }
+
+function MiniStat({
+  label,
+  value,
+  state,
+}: {
+  label: string;
+  value: string;
+  state: React.ComponentProps<typeof OpStateBadge>["state"];
+}) {
+  return (
+    <div className="rounded-md border px-3 py-2">
+      <div className="flex items-center justify-between">
+        <span className="text-[10px] font-medium uppercase tracking-wider text-muted-foreground">
+          {label}
+        </span>
+      </div>
+      <div className="mt-0.5 flex items-baseline justify-between gap-2">
+        <span className="font-display text-xl font-semibold tabular-nums">{value}</span>
+        <OpStateBadge state={state} size="xs" />
+      </div>
+    </div>
+  );
+}
