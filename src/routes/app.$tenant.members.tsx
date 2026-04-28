@@ -66,12 +66,54 @@ type Member = {
 };
 
 const seed: Member[] = [
-  { id: "1", name: "Maya Holloway", email: "maya@bella.com", role: "Business Admin", team: "Front of house", status: "active" },
-  { id: "2", name: "Diego Romero", email: "diego@bella.com", role: "Operator", team: "Front of house", status: "active" },
-  { id: "3", name: "Aiko Tanaka", email: "aiko@bella.com", role: "Operator", team: "Kitchen", status: "active" },
-  { id: "4", name: "Henrik Solberg", email: "henrik@bella.com", role: "Operator", team: "Delivery", status: "invited" },
-  { id: "5", name: "Priya Shah", email: "priya@bella.com", role: "Viewer", team: "Front of house", status: "inactive" },
-  { id: "6", name: "Lucas Mendez", email: "lucas@bella.com", role: "Operator", team: "Delivery", status: "active" },
+  {
+    id: "1",
+    name: "Maya Holloway",
+    email: "maya@bella.com",
+    role: "Business Admin",
+    team: "Front of house",
+    status: "active",
+  },
+  {
+    id: "2",
+    name: "Diego Romero",
+    email: "diego@bella.com",
+    role: "Operator",
+    team: "Front of house",
+    status: "active",
+  },
+  {
+    id: "3",
+    name: "Aiko Tanaka",
+    email: "aiko@bella.com",
+    role: "Operator",
+    team: "Kitchen",
+    status: "active",
+  },
+  {
+    id: "4",
+    name: "Henrik Solberg",
+    email: "henrik@bella.com",
+    role: "Operator",
+    team: "Delivery",
+    status: "invited",
+  },
+  {
+    id: "5",
+    name: "Priya Shah",
+    email: "priya@bella.com",
+    role: "Viewer",
+    team: "Front of house",
+    status: "inactive",
+  },
+  {
+    id: "6",
+    name: "Lucas Mendez",
+    email: "lucas@bella.com",
+    role: "Operator",
+    team: "Delivery",
+    status: "active",
+  },
 ];
 
 const teams = [
@@ -126,8 +168,7 @@ function MembersPage() {
               Level B · Tenant
             </Badge>
             <span className="text-xs text-muted-foreground">
-              {seed.filter((m) => m.status === "active").length} active ·{" "}
-              {invites.length} invited
+              {seed.filter((m) => m.status === "active").length} active · {invites.length} invited
             </span>
           </>
         }
@@ -207,7 +248,10 @@ function MembersPage() {
                 <TableBody>
                   {filtered.length === 0 ? (
                     <TableRow>
-                      <TableCell colSpan={5} className="py-12 text-center text-sm text-muted-foreground">
+                      <TableCell
+                        colSpan={5}
+                        className="py-12 text-center text-sm text-muted-foreground"
+                      >
                         No members match these filters.
                       </TableCell>
                     </TableRow>
@@ -241,7 +285,9 @@ function MembersPage() {
                         </TableCell>
                         <TableCell className="text-sm">{m.team}</TableCell>
                         <TableCell>
-                          <Badge className={`border-0 font-normal capitalize ${statusStyle[m.status]}`}>
+                          <Badge
+                            className={`border-0 font-normal capitalize ${statusStyle[m.status]}`}
+                          >
                             {m.status}
                           </Badge>
                         </TableCell>

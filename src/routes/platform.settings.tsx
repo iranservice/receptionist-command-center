@@ -174,7 +174,11 @@ function PlatformSettings() {
                   ["Cross-workspace search", false],
                   ["AI fine-tuning console", false],
                 ].map(([label, on]) => (
-                  <PolicyRow key={label as string} title={label as string} defaultOn={on as boolean} />
+                  <PolicyRow
+                    key={label as string}
+                    title={label as string}
+                    defaultOn={on as boolean}
+                  />
                 ))}
               </div>
             </SettingsSection>

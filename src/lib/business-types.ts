@@ -1,4 +1,11 @@
-import { UtensilsCrossed, Stethoscope, Scissors, ShoppingCart, Sparkles, type LucideIcon } from "lucide-react";
+import {
+  UtensilsCrossed,
+  Stethoscope,
+  Scissors,
+  ShoppingCart,
+  Sparkles,
+  type LucideIcon,
+} from "lucide-react";
 
 /**
  * Business types are an extensible catalog. The product is restaurant-first
@@ -9,12 +16,7 @@ import { UtensilsCrossed, Stethoscope, Scissors, ShoppingCart, Sparkles, type Lu
  * Backend remains the source of truth for which types and modules a tenant
  * can actually use. The frontend only displays the catalog.
  */
-export type BusinessTypeId =
-  | "restaurant"
-  | "clinic"
-  | "salon"
-  | "supermarket"
-  | "service";
+export type BusinessTypeId = "restaurant" | "clinic" | "salon" | "supermarket" | "service";
 
 export type BusinessTypeModule =
   | "menu"

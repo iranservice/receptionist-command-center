@@ -119,9 +119,7 @@ function TenantSettings() {
           {active === "service" && <ServiceTab />}
           {active === "ai" && <AITab />}
           {active === "localization" && <LocalizationTab />}
-          {active === "module" && (
-            <ModuleTab value={businessType} onChange={setBusinessType} />
-          )}
+          {active === "module" && <ModuleTab value={businessType} onChange={setBusinessType} />}
         </div>
       </div>
     </>

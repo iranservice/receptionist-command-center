@@ -112,9 +112,7 @@ function SetupWizard() {
                       onClick={() => setStepIdx(i)}
                       className={[
                         "flex w-full items-start gap-3 rounded-md px-2.5 py-2 text-left transition-colors",
-                        active
-                          ? "bg-level-b/10 text-level-b"
-                          : "text-foreground/85 hover:bg-muted",
+                        active ? "bg-level-b/10 text-level-b" : "text-foreground/85 hover:bg-muted",
                       ].join(" ")}
                     >
                       <span

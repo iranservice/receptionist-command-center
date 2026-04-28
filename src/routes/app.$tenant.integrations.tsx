@@ -149,9 +149,15 @@ function IntegrationsPage() {
                 or routes payments.
               </p>
               <div className="mt-3 flex flex-wrap gap-2">
-                <Badge variant="outline" className="font-normal">Stripe</Badge>
-                <Badge variant="outline" className="font-normal">PayPal</Badge>
-                <Badge variant="outline" className="font-normal">Local providers</Badge>
+                <Badge variant="outline" className="font-normal">
+                  Stripe
+                </Badge>
+                <Badge variant="outline" className="font-normal">
+                  PayPal
+                </Badge>
+                <Badge variant="outline" className="font-normal">
+                  Local providers
+                </Badge>
               </div>
             </div>
             <Badge className="border-0 bg-muted text-muted-foreground">Not connected</Badge>
