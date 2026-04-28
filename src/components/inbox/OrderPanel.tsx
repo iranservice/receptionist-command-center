@@ -19,12 +19,7 @@ import {
   CircleDashed,
   RefreshCw,
 } from "lucide-react";
-import type {
-  LinkedOrder,
-  OrderAction,
-  OrderStatus,
-  CustomerConfirmation,
-} from "@/lib/inbox-data";
+import type { LinkedOrder, OrderAction, OrderStatus, CustomerConfirmation } from "@/lib/inbox-data";
 import { cn } from "@/lib/utils";
 
 // ---------------------------------------------------------------------------
@@ -284,14 +279,13 @@ function OrderCard({ order }: { order: LinkedOrder }) {
   const isPending = order.status === "pending_customer_confirmation";
 
   // Status-tinted left rail to make state scannable at a glance.
-  const railTone =
-    isPending
-      ? "before:bg-warn"
-      : isConfirmed
-        ? "before:bg-success"
-        : isCancelled
-          ? "before:bg-destructive/60"
-          : "before:bg-muted-foreground/30";
+  const railTone = isPending
+    ? "before:bg-warn"
+    : isConfirmed
+      ? "before:bg-success"
+      : isCancelled
+        ? "before:bg-destructive/60"
+        : "before:bg-muted-foreground/30";
 
   return (
     <div className="px-4 pb-4">
@@ -334,16 +328,9 @@ function OrderCard({ order }: { order: LinkedOrder }) {
         {/* Totals */}
         {(order.subtotalLabel || order.totalLabel !== "—") && (
           <div className="mt-2.5 space-y-0.5 border-t pt-2 text-xs">
-            {order.subtotalLabel && (
-              <Row label="Subtotal" value={order.subtotalLabel} muted />
-            )}
+            {order.subtotalLabel && <Row label="Subtotal" value={order.subtotalLabel} muted />}
             {order.taxLabel && <Row label="Tax" value={order.taxLabel} muted />}
-            <Row
-              label="Total"
-              value={order.totalLabel}
-              strong
-              className="pt-0.5 text-sm"
-            />
+            <Row label="Total" value={order.totalLabel} strong className="pt-0.5 text-sm" />
           </div>
         )}
 
@@ -384,9 +371,7 @@ function ConfirmationStrip({ order }: { order: LinkedOrder }) {
         c.status === "requested" && "border-warn/40 bg-warn/10",
         c.status === "received" && "border-success/30 bg-success/8",
         c.status === "declined" && "border-destructive/30 bg-destructive/8",
-        (c.status === "not_required" ||
-          c.status === "not_requested" ||
-          c.status === "expired") &&
+        (c.status === "not_required" || c.status === "not_requested" || c.status === "expired") &&
           "border-border bg-muted/30",
       )}
     >
@@ -618,10 +603,7 @@ function ActionsRow({ order }: { order: LinkedOrder }) {
             const d = actionRegistry[a];
             const note = order.unavailableActionNotes?.[a];
             return (
-              <li
-                key={a}
-                className="flex items-start gap-1.5 text-[10px] text-muted-foreground"
-              >
+              <li key={a} className="flex items-start gap-1.5 text-[10px] text-muted-foreground">
                 <Lock className="mt-0.5 h-2.5 w-2.5 shrink-0" />
                 <span>
                   <span className="font-medium">{d.label}</span> not available
