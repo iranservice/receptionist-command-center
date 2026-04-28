@@ -1,4 +1,4 @@
-import { createFileRoute, Link, useParams } from "@tanstack/react-router";
+import { createFileRoute, useParams } from "@tanstack/react-router";
 import { PageHeader } from "@/components/shell/PageHeader";
 import { EmptyState } from "@/components/state/UIState";
 import { Users, Inbox } from "lucide-react";
