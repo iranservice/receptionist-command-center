@@ -1,3 +1,4 @@
+import type { ComponentProps } from "react";
 import { createFileRoute, Link, useParams } from "@tanstack/react-router";
 import {
   PageHeader,
