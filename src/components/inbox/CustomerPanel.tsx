@@ -75,10 +75,7 @@ export function CustomerPanel({ conversation }: { conversation: Conversation }) 
       </div>
 
       {/* Ownership */}
-      <Section
-        title="Conversation ownership"
-        action={<OwnerBadge owner={conversation.owner} />}
-      >
+      <Section title="Conversation ownership" action={<OwnerBadge owner={conversation.owner} />}>
         <div className="space-y-2 text-xs">
           {conversation.assignedTo ? (
             <div className="flex items-center justify-between">
@@ -167,9 +164,7 @@ export function CustomerPanel({ conversation }: { conversation: Conversation }) 
               {o.items.map((it, i) => (
                 <li key={i} className="flex justify-between text-foreground/85">
                   <span>
-                    <span className="font-mono tabular-nums text-muted-foreground">
-                      {it.qty}×
-                    </span>{" "}
+                    <span className="font-mono tabular-nums text-muted-foreground">{it.qty}×</span>{" "}
                     {it.name}
                   </span>
                 </li>
@@ -234,8 +229,9 @@ export function CustomerPanel({ conversation }: { conversation: Conversation }) 
           )}
         </div>
         <p className="mt-2 text-[10px] text-muted-foreground">
-          {conversation.noteCount ?? 0} internal note{(conversation.noteCount ?? 0) === 1 ? "" : "s"}.
-          Notes are operator-only and never sent to the customer.
+          {conversation.noteCount ?? 0} internal note
+          {(conversation.noteCount ?? 0) === 1 ? "" : "s"}. Notes are operator-only and never sent
+          to the customer.
         </p>
       </Section>
     </div>

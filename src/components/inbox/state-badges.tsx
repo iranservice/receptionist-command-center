@@ -1,8 +1,25 @@
-import { Bot, User, Clock, CircleAlert, CheckCircle2, ArrowRightLeft, MessageSquare, Mail, Phone, Globe } from "lucide-react";
+import {
+  Bot,
+  User,
+  Clock,
+  CircleAlert,
+  CheckCircle2,
+  ArrowRightLeft,
+  MessageSquare,
+  Mail,
+  Phone,
+  Globe,
+} from "lucide-react";
 import type { Channel, ConversationStatus, OwnerType, SenderType } from "@/lib/inbox-data";
 import { cn } from "@/lib/utils";
 
-export function StatusBadge({ status, className }: { status: ConversationStatus; className?: string }) {
+export function StatusBadge({
+  status,
+  className,
+}: {
+  status: ConversationStatus;
+  className?: string;
+}) {
   const map: Record<ConversationStatus, { cls: string; icon: typeof Bot; label: string }> = {
     ai_active: { cls: "bg-ai/12 text-ai border-ai/30", icon: Bot, label: "AI active" },
     operator_active: {
@@ -118,5 +135,9 @@ export function SenderTag({ sender }: { sender: SenderType }) {
         : sender === "system"
           ? "text-muted-foreground"
           : "text-foreground";
-  return <span className={cn("text-[10px] font-semibold uppercase tracking-wider", cls)}>{map[sender]}</span>;
+  return (
+    <span className={cn("text-[10px] font-semibold uppercase tracking-wider", cls)}>
+      {map[sender]}
+    </span>
+  );
 }

@@ -14,11 +14,7 @@ import {
   RefreshCw,
 } from "lucide-react";
 import { conversations as demoConversations, type Conversation } from "@/lib/inbox-data";
-import {
-  StatusBadge,
-  ChannelBadge,
-  OwnerBadge,
-} from "@/components/inbox/state-badges";
+import { StatusBadge, ChannelBadge, OwnerBadge } from "@/components/inbox/state-badges";
 import { MessageTimeline } from "@/components/inbox/MessageTimeline";
 import { ReplyComposer } from "@/components/inbox/ReplyComposer";
 import { CustomerPanel } from "@/components/inbox/CustomerPanel";
@@ -124,7 +120,9 @@ function InboxPage() {
                       onClick={() => setActiveView(v.id)}
                       className={cn(
                         "flex w-full items-center justify-between rounded-md px-2 py-1.5 text-sm transition-colors",
-                        active ? "bg-accent font-medium text-foreground" : "text-foreground/80 hover:bg-accent/60",
+                        active
+                          ? "bg-accent font-medium text-foreground"
+                          : "text-foreground/80 hover:bg-accent/60",
                       )}
                     >
                       <span className="flex items-center gap-2">
@@ -301,9 +299,7 @@ function InboxPage() {
 
 function ConversationView({ conversation }: { conversation: Conversation }) {
   const ownerLabel =
-    conversation.owner === "ai"
-      ? "AI"
-      : conversation.assignedTo?.name ?? "Operator";
+    conversation.owner === "ai" ? "AI" : (conversation.assignedTo?.name ?? "Operator");
 
   return (
     <>
@@ -323,9 +319,7 @@ function ConversationView({ conversation }: { conversation: Conversation }) {
             {conversation.assignedTo && (
               <>
                 {" · "}assigned to{" "}
-                <span className="font-medium text-foreground">
-                  {conversation.assignedTo.name}
-                </span>
+                <span className="font-medium text-foreground">{conversation.assignedTo.name}</span>
               </>
             )}
           </p>
