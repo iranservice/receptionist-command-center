@@ -333,7 +333,7 @@ function MiniStat({
 }: {
   label: string;
   value: string;
-  state: React.ComponentProps<typeof OpStateBadge>["state"];
+  state: ComponentProps<typeof OpStateBadge>["state"];
 }) {
   return (
     <div className="rounded-md border px-3 py-2">
