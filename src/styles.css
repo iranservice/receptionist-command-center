@@ -81,60 +81,66 @@
 
 :root {
   --radius: 0.625rem;
-  --background: oklch(0.985 0.003 247);
-  --foreground: oklch(0.18 0.03 250);
+  --background: oklch(0.985 0.004 250);
+  --foreground: oklch(0.18 0.025 255);
   --card: oklch(1 0 0);
-  --card-foreground: oklch(0.18 0.03 250);
+  --card-foreground: oklch(0.18 0.025 255);
   --popover: oklch(1 0 0);
-  --popover-foreground: oklch(0.18 0.03 250);
-  --primary: oklch(0.55 0.13 200);
-  --primary-foreground: oklch(0.99 0.005 200);
-  --secondary: oklch(0.96 0.01 240);
-  --secondary-foreground: oklch(0.22 0.03 250);
-  --muted: oklch(0.96 0.008 240);
-  --muted-foreground: oklch(0.5 0.02 250);
-  --accent: oklch(0.94 0.02 200);
-  --accent-foreground: oklch(0.22 0.04 230);
+  --popover-foreground: oklch(0.18 0.025 255);
+  --primary: oklch(0.5 0.15 260);
+  --primary-foreground: oklch(0.99 0.003 250);
+  --secondary: oklch(0.97 0.008 250);
+  --secondary-foreground: oklch(0.22 0.03 255);
+  --muted: oklch(0.965 0.006 250);
+  --muted-foreground: oklch(0.52 0.02 255);
+  --accent: oklch(0.95 0.02 260);
+  --accent-foreground: oklch(0.22 0.04 260);
   --destructive: oklch(0.6 0.22 25);
   --destructive-foreground: oklch(0.99 0.005 0);
-  --border: oklch(0.92 0.01 240);
-  --input: oklch(0.92 0.01 240);
-  --ring: oklch(0.55 0.13 200);
-  --chart-1: oklch(0.55 0.13 200);
-  --chart-2: oklch(0.6 0.18 280);
+  --border: oklch(0.92 0.008 250);
+  --input: oklch(0.92 0.008 250);
+  --ring: oklch(0.5 0.15 260);
+  --chart-1: oklch(0.5 0.15 260);
+  --chart-2: oklch(0.6 0.16 195);
   --chart-3: oklch(0.7 0.16 60);
   --chart-4: oklch(0.65 0.18 145);
   --chart-5: oklch(0.6 0.22 25);
 
-  /* Level A — platform (Super Admin) */
-  --level-a: oklch(0.32 0.08 270);
+  /* Level A — platform (Super Admin): indigo, authoritative */
+  --level-a: oklch(0.42 0.16 270);
   --level-a-foreground: oklch(0.985 0.005 250);
-  --level-a-soft: oklch(0.94 0.025 270);
+  --level-a-soft: oklch(0.95 0.03 270);
 
-  /* Level B — tenant workspace */
-  --level-b: oklch(0.5 0.12 195);
+  /* Level B — tenant workspace: teal, operational */
+  --level-b: oklch(0.55 0.13 195);
   --level-b-foreground: oklch(0.99 0.005 200);
   --level-b-soft: oklch(0.95 0.025 195);
 
   /* AI vs Operator state */
   --ai: oklch(0.58 0.18 295);
   --ai-foreground: oklch(0.99 0.005 295);
-  --operator: oklch(0.68 0.16 60);
-  --operator-foreground: oklch(0.18 0.04 60);
+  --operator: oklch(0.7 0.16 65);
+  --operator-foreground: oklch(0.2 0.04 60);
 
   --warn: oklch(0.78 0.15 80);
   --warn-foreground: oklch(0.22 0.05 70);
   --success: oklch(0.62 0.16 150);
   --success-foreground: oklch(0.99 0.005 150);
 
+  /* Elevations */
+  --shadow-xs: 0 1px 2px 0 oklch(0.2 0.03 250 / 0.05);
+  --shadow-sm: 0 1px 3px 0 oklch(0.2 0.03 250 / 0.06), 0 1px 2px -1px oklch(0.2 0.03 250 / 0.04);
+  --shadow-md: 0 4px 12px -2px oklch(0.2 0.03 250 / 0.08), 0 2px 4px -2px oklch(0.2 0.03 250 / 0.04);
+  --shadow-lg: 0 12px 32px -8px oklch(0.2 0.05 260 / 0.18);
+
   --sidebar: oklch(0.99 0.003 250);
-  --sidebar-foreground: oklch(0.22 0.03 250);
-  --sidebar-primary: oklch(0.32 0.08 270);
+  --sidebar-foreground: oklch(0.28 0.025 255);
+  --sidebar-primary: oklch(0.42 0.16 270);
   --sidebar-primary-foreground: oklch(0.985 0.005 250);
-  --sidebar-accent: oklch(0.95 0.015 240);
-  --sidebar-accent-foreground: oklch(0.22 0.03 250);
-  --sidebar-border: oklch(0.92 0.01 240);
-  --sidebar-ring: oklch(0.55 0.13 200);
+  --sidebar-accent: oklch(0.955 0.012 250);
+  --sidebar-accent-foreground: oklch(0.22 0.03 255);
+  --sidebar-border: oklch(0.92 0.008 250);
+  --sidebar-ring: oklch(0.5 0.15 260);
 }
 
 .dark {
@@ -193,8 +199,43 @@
     border-color: var(--color-border);
   }
 
+  html {
+    font-family: var(--font-sans);
+    -webkit-font-smoothing: antialiased;
+    text-rendering: optimizeLegibility;
+  }
+
   body {
     background-color: var(--color-background);
     color: var(--color-foreground);
+    font-feature-settings: "cv11", "ss01";
   }
+
+  h1, h2, h3, h4 {
+    font-family: var(--font-display);
+    letter-spacing: -0.01em;
+  }
+}
+
+/* Subtle dotted backdrop for ops surfaces */
+.ops-surface {
+  background-image: radial-gradient(oklch(0.85 0.01 250 / 0.5) 1px, transparent 1px);
+  background-size: 24px 24px;
+}
+.dark .ops-surface {
+  background-image: radial-gradient(oklch(1 0 0 / 0.04) 1px, transparent 1px);
+}
+
+/* Level context strip behind top bar */
+.context-strip-a {
+  background: linear-gradient(90deg,
+    color-mix(in oklab, var(--level-a) 14%, transparent),
+    color-mix(in oklab, var(--level-a) 4%, transparent) 55%,
+    transparent);
+}
+.context-strip-b {
+  background: linear-gradient(90deg,
+    color-mix(in oklab, var(--level-b) 14%, transparent),
+    color-mix(in oklab, var(--level-b) 4%, transparent) 55%,
+    transparent);
 }
