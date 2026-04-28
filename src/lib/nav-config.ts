@@ -15,6 +15,7 @@ import {
   HeadphonesIcon,
   Megaphone,
   Server,
+  Rocket,
   type LucideIcon,
 } from "lucide-react";
 
@@ -108,6 +109,13 @@ export const tenantNav: NavItem[] = [
     label: "Settings",
     to: "/app/$tenant/settings",
     icon: Settings,
+    group: "manage",
+    roles: ["business_admin"],
+  },
+  {
+    label: "Business Setup",
+    to: "/app/$tenant/setup",
+    icon: Rocket,
     group: "manage",
     roles: ["business_admin"],
   },
