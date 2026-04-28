@@ -1,18 +1,17 @@
 import { createFileRoute } from "@tanstack/react-router";
-import { PageHeader, Placeholder } from "@/components/shell/PageHeader";
+import { PageHeader } from "@/components/shell/PageHeader";
+import { EmptyState } from "@/components/state/UIState";
+import { Building2 } from "lucide-react";
 
 export const Route = createFileRoute("/platform/tenants")({
   component: () => (
     <>
       <PageHeader title="Tenants" description="All customer businesses on the platform." />
-      <Placeholder
-        scope="Level A"
-        title="Tenant directory"
-        notes={[
-          "List of tenant businesses, type (restaurant / clinic / salon / …), plan, status.",
-          "Future: provisioning new tenants and impersonation entry points.",
-        ]}
-        contract="Backend owns tenant isolation and membership truth."
+      {/* TODO(api): platform-scoped tenant directory. Backend owns isolation + membership. */}
+      <EmptyState
+        icon={Building2}
+        title="No tenants loaded"
+        description="Tenant businesses (restaurants, clinics, salons, …) with plan and status will appear here. Provisioning and impersonation entry points come in a later phase."
       />
     </>
   ),
