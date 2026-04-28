@@ -1,22 +1,19 @@
-import { Card } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import {
   Bot,
   User,
   ArrowRightLeft,
-  ShoppingBag,
   Phone,
-  Mail,
   MapPin,
   Languages,
   Clock,
   StickyNote,
   Tag,
-  ExternalLink,
 } from "lucide-react";
 import type { Conversation } from "@/lib/inbox-data";
 import { OwnerBadge } from "./state-badges";
+import { OrderPanel } from "./OrderPanel";
 
 function Section({
   title,
@@ -42,7 +39,8 @@ function Section({
 
 export function CustomerPanel({ conversation }: { conversation: Conversation }) {
   const c = conversation.customer;
-  const o = conversation.order;
+  // Prefer the multi-order list if present, fall back to the single linked order.
+  const orders = conversation.orders ?? (conversation.order ? [conversation.order] : []);
 
   return (
     <div className="flex h-full flex-col divide-y bg-card/40">
@@ -140,74 +138,8 @@ export function CustomerPanel({ conversation }: { conversation: Conversation }) 
         </ul>
       </Section>
 
-      {/* Linked order */}
-      <Section
-        title="Linked order"
-        action={
-          o ? (
-            <Badge variant="outline" className="h-5 px-1.5 text-[10px] font-medium">
-              #{o.id}
-            </Badge>
-          ) : null
-        }
-      >
-        {o ? (
-          <Card className="p-3 shadow-xs">
-            <div className="flex items-center justify-between">
-              <span className="inline-flex items-center gap-1.5 text-xs font-semibold">
-                <ShoppingBag className="h-3.5 w-3.5 text-muted-foreground" />
-                {o.channel.replace("_", " ")}
-              </span>
-              <OrderStatusBadge status={o.status} />
-            </div>
-            <ul className="mt-2 space-y-0.5 text-xs">
-              {o.items.map((it, i) => (
-                <li key={i} className="flex justify-between text-foreground/85">
-                  <span>
-                    <span className="font-mono tabular-nums text-muted-foreground">{it.qty}×</span>{" "}
-                    {it.name}
-                  </span>
-                </li>
-              ))}
-            </ul>
-            <div className="mt-2 flex items-center justify-between border-t pt-2">
-              <span className="text-[10px] uppercase tracking-wider text-muted-foreground">
-                Total
-              </span>
-              <span className="font-mono text-sm font-semibold tabular-nums">{o.totalLabel}</span>
-            </div>
-            <div className="mt-2.5 flex flex-wrap gap-1.5">
-              {o.availableActions.includes("view") && (
-                <Button variant="outline" size="sm" className="h-7 gap-1 text-xs">
-                  <ExternalLink className="h-3 w-3" /> View order
-                </Button>
-              )}
-              {o.availableActions.includes("request_confirmation") && (
-                <Button variant="outline" size="sm" className="h-7 text-xs">
-                  Request confirmation
-                </Button>
-              )}
-              {o.availableActions.includes("confirm") && (
-                <Button size="sm" className="h-7 text-xs">
-                  Confirm
-                </Button>
-              )}
-              {o.availableActions.includes("cancel") && (
-                <Button variant="ghost" size="sm" className="h-7 text-xs text-destructive">
-                  Cancel
-                </Button>
-              )}
-            </div>
-            <p className="mt-2 text-[10px] text-muted-foreground">
-              Available actions are decided by the backend per order state.
-            </p>
-          </Card>
-        ) : (
-          <p className="text-xs italic text-muted-foreground">
-            No order linked to this conversation.
-          </p>
-        )}
-      </Section>
+      {/* Linked order — LV-4 enhanced panel */}
+      <OrderPanel orders={orders} />
 
       {/* Tags & notes */}
       <Section
@@ -235,28 +167,5 @@ export function CustomerPanel({ conversation }: { conversation: Conversation }) 
         </p>
       </Section>
     </div>
-  );
-}
-
-function OrderStatusBadge({ status }: { status: NonNullable<Conversation["order"]>["status"] }) {
-  const map = {
-    draft: { cls: "bg-muted text-muted-foreground border-border", label: "Draft" },
-    pending_confirmation: {
-      cls: "bg-warn/30 text-warn-foreground border-warn/40",
-      label: "Pending confirm",
-    },
-    confirmed: { cls: "bg-success/15 text-success border-success/25", label: "Confirmed" },
-    cancelled: {
-      cls: "bg-destructive/12 text-destructive border-destructive/30",
-      label: "Cancelled",
-    },
-  } as const;
-  const { cls, label } = map[status];
-  return (
-    <span
-      className={`inline-flex h-5 items-center rounded-md border px-1.5 text-[10px] font-medium uppercase tracking-wider ${cls}`}
-    >
-      {label}
-    </span>
   );
 }
