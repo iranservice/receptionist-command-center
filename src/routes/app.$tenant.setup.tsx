@@ -219,7 +219,7 @@ function StepType({
                 active ? "bg-level-b text-level-b-foreground" : "bg-muted text-foreground/70",
               ].join(" ")}
             >
-              <Icon className="h-4.5 w-4.5" />
+              <Icon className="h-4 w-4" />
             </span>
             <div className="min-w-0 flex-1">
               <div className="flex items-center gap-2">
