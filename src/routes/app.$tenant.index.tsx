@@ -8,6 +8,7 @@ import {
 import { Card } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
+import { OpStateBadge } from "@/components/state/OpStateBadge";
 import {
   Inbox,
   Bot,
@@ -20,6 +21,10 @@ import {
   Activity,
   Plug,
   BarChart3,
+  CircleAlert,
+  CheckCircle2,
+  ShieldCheck,
+  ArrowRightLeft,
 } from "lucide-react";
 import { demoTenants } from "@/lib/nav-config";
 
