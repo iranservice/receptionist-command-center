@@ -48,10 +48,16 @@ export function MessageTimeline({ messages }: { messages: Message[] }) {
       {messages.map((m) => {
         if (m.sender === "system") {
           const Icon = m.systemKind ? systemIcon[m.systemKind] : Radio;
+          const tone = m.systemKind ? orderEventTone[m.systemKind] : undefined;
           return (
             <div key={m.id} className="my-1 flex items-center gap-2">
               <div className="h-px flex-1 bg-border" />
-              <span className="inline-flex items-center gap-1.5 rounded-full border bg-muted/60 px-2.5 py-0.5 text-[11px] text-muted-foreground">
+              <span
+                className={cn(
+                  "inline-flex items-center gap-1.5 rounded-full border px-2.5 py-0.5 text-[11px]",
+                  tone ?? "bg-muted/60 text-muted-foreground",
+                )}
+              >
                 <Icon className="h-3 w-3" />
                 {m.body}
                 <span className="text-[10px] tabular-nums opacity-70">· {formatTime(m.at)}</span>
