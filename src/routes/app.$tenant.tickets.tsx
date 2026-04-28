@@ -1,5 +1,7 @@
 import { createFileRoute } from "@tanstack/react-router";
-import { PageHeader, Placeholder } from "@/components/shell/PageHeader";
+import { PageHeader } from "@/components/shell/PageHeader";
+import { EmptyState } from "@/components/state/UIState";
+import { TicketCheck } from "lucide-react";
 
 export const Route = createFileRoute("/app/$tenant/tickets")({
   component: () => (
@@ -8,10 +10,11 @@ export const Route = createFileRoute("/app/$tenant/tickets")({
         title="Tickets & Callbacks"
         description="Issues to resolve and customers to call back."
       />
-      <Placeholder
-        scope="Level B"
-        title="Tickets and callback queue"
-        notes={["Open / pending / resolved tickets, scheduled callbacks, owner."]}
+      {/* TODO(api): backend-driven ticket queue with owner + SLA. */}
+      <EmptyState
+        icon={TicketCheck}
+        title="No open tickets"
+        description="Open / pending / resolved tickets and scheduled callbacks will appear here once the backend is connected."
       />
     </>
   ),

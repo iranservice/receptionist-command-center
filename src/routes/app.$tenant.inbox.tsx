@@ -8,16 +8,19 @@ import {
   Filter,
   Inbox as InboxIcon,
   ChevronRight,
+  ChevronLeft,
   MessageSquare,
   CircleAlert,
   ArrowRightLeft,
-  RefreshCw,
+  PanelRight,
 } from "lucide-react";
 import { conversations as demoConversations, type Conversation } from "@/lib/inbox-data";
 import { StatusBadge, ChannelBadge, OwnerBadge } from "@/components/inbox/state-badges";
 import { MessageTimeline } from "@/components/inbox/MessageTimeline";
 import { ReplyComposer } from "@/components/inbox/ReplyComposer";
 import { CustomerPanel } from "@/components/inbox/CustomerPanel";
+import { EmptyState, ErrorState, SkeletonList } from "@/components/state/UIState";
+import { Sheet, SheetContent, SheetTitle } from "@/components/ui/sheet";
 import { cn } from "@/lib/utils";
 
 export const Route = createFileRoute("/app/$tenant/inbox")({
@@ -58,12 +61,17 @@ const views: { id: ViewKey; label: string; predicate: (c: Conversation) => boole
   { id: "closed", label: "Closed", predicate: (c) => c.status === "closed" },
 ];
 
+// Mobile view modes — desktop shows all 3 panes side by side.
+type MobilePane = "list" | "conversation";
+
 function InboxPage() {
   const [activeView, setActiveView] = useState<ViewKey>("all");
   const [query, setQuery] = useState("");
   const [selectedId, setSelectedId] = useState<string>(demoConversations[0].id);
-  // Loading/error states are exposed for UX completeness even though demo data is static.
+  // UX completeness: future loaders/queries will set this from backend results.
   const [phase] = useState<"ready" | "loading" | "error">("ready");
+  const [mobilePane, setMobilePane] = useState<MobilePane>("list");
+  const [contextOpen, setContextOpen] = useState(false);
 
   const filtered = useMemo(() => {
     const view = views.find((v) => v.id === activeView)!;
@@ -86,6 +94,11 @@ function InboxPage() {
     return m;
   }, []);
 
+  const handleSelect = (id: string) => {
+    setSelectedId(id);
+    setMobilePane("conversation");
+  };
+
   return (
     <div className="flex h-[calc(100vh-3.5rem)] min-h-0 flex-col">
       <PageHeader
@@ -94,18 +107,26 @@ function InboxPage() {
         actions={
           <>
             <Button variant="outline" size="sm" className="gap-1.5">
-              <Filter className="h-3.5 w-3.5" /> Filters
+              <Filter className="h-3.5 w-3.5" /> <span className="hidden sm:inline">Filters</span>
             </Button>
             <Button size="sm" className="gap-1.5">
-              <MessageSquare className="h-3.5 w-3.5" /> New conversation
+              <MessageSquare className="h-3.5 w-3.5" />
+              <span className="hidden sm:inline">New conversation</span>
+              <span className="sm:hidden">New</span>
             </Button>
           </>
         }
       />
 
-      <div className="grid min-h-0 flex-1 grid-cols-1 lg:grid-cols-[260px_minmax(0,1fr)_340px]">
+      <div className="grid min-h-0 flex-1 grid-cols-1 md:grid-cols-[260px_minmax(0,1fr)] xl:grid-cols-[260px_minmax(0,1fr)_340px]">
         {/* LEFT: Views + channels + list */}
-        <aside className="flex min-h-0 flex-col border-b bg-card/40 lg:border-b-0 lg:border-r">
+        <aside
+          className={cn(
+            "flex min-h-0 flex-col border-b bg-card/40 md:border-b-0 md:border-r",
+            // On mobile, hide the list when viewing a conversation
+            mobilePane === "conversation" ? "hidden md:flex" : "flex",
+          )}
+        >
           <div className="border-b p-3">
             <h3 className="px-2 text-[10px] font-semibold uppercase tracking-[0.08em] text-muted-foreground">
               Views
@@ -118,6 +139,7 @@ function InboxPage() {
                   <li key={v.id}>
                     <button
                       onClick={() => setActiveView(v.id)}
+                      aria-pressed={active}
                       className={cn(
                         "flex w-full items-center justify-between rounded-md px-2 py-1.5 text-sm transition-colors",
                         active
@@ -168,6 +190,7 @@ function InboxPage() {
               value={query}
               onChange={(e) => setQuery(e.target.value)}
               placeholder="Search this view…"
+              aria-label="Search conversations in this view"
               className="flex-1 bg-transparent text-sm outline-none placeholder:text-muted-foreground"
             />
             <span className="text-xs text-muted-foreground tabular-nums">{filtered.length}</span>
@@ -176,37 +199,23 @@ function InboxPage() {
           {/* List body */}
           <div className="min-h-0 flex-1 overflow-y-auto">
             {phase === "loading" ? (
-              <ul className="divide-y">
-                {[0, 1, 2, 3].map((i) => (
-                  <li key={i} className="px-4 py-3">
-                    <div className="flex gap-3">
-                      <div className="h-9 w-9 animate-pulse rounded-full bg-muted" />
-                      <div className="flex-1 space-y-2">
-                        <div className="h-3 w-1/2 animate-pulse rounded bg-muted" />
-                        <div className="h-3 w-3/4 animate-pulse rounded bg-muted" />
-                      </div>
-                    </div>
-                  </li>
-                ))}
-              </ul>
+              <SkeletonList rows={5} />
             ) : phase === "error" ? (
-              <div className="flex h-full flex-col items-center justify-center gap-2 px-6 py-12 text-center">
-                <CircleAlert className="h-6 w-6 text-destructive" />
-                <p className="text-sm font-medium">Couldn't load conversations</p>
-                <Button variant="outline" size="sm" className="mt-1 gap-1.5">
-                  <RefreshCw className="h-3.5 w-3.5" /> Retry
-                </Button>
-              </div>
+              <ErrorState
+                size="sm"
+                title="Couldn't load conversations"
+                description="Backend will own retry semantics; this is a UI placeholder."
+                onRetry={() => {
+                  /* wired by loader later */
+                }}
+              />
             ) : filtered.length === 0 ? (
-              <div className="flex h-full flex-col items-center justify-center gap-2 px-6 py-12 text-center">
-                <div className="flex h-10 w-10 items-center justify-center rounded-full bg-muted text-muted-foreground">
-                  <InboxIcon className="h-4 w-4" />
-                </div>
-                <p className="text-sm font-medium">Nothing in this view</p>
-                <p className="max-w-[200px] text-xs text-muted-foreground">
-                  Try a different view, channel, or clear the search.
-                </p>
-              </div>
+              <EmptyState
+                size="sm"
+                icon={InboxIcon}
+                title="Nothing in this view"
+                description="Try a different view, channel, or clear the search."
+              />
             ) : (
               <ul className="divide-y">
                 {filtered.map((t) => {
@@ -214,7 +223,8 @@ function InboxPage() {
                   return (
                     <li key={t.id}>
                       <button
-                        onClick={() => setSelectedId(t.id)}
+                        onClick={() => handleSelect(t.id)}
+                        aria-current={active ? "true" : undefined}
                         className={cn(
                           "flex w-full items-start gap-3 px-4 py-3 text-left transition-colors",
                           active
@@ -268,69 +278,118 @@ function InboxPage() {
         </aside>
 
         {/* CENTER: Conversation workspace */}
-        <section className="flex min-h-0 min-w-0 flex-col bg-background">
+        <section
+          className={cn(
+            "flex min-h-0 min-w-0 flex-col bg-background",
+            mobilePane === "list" ? "hidden md:flex" : "flex",
+          )}
+        >
           {selected ? (
-            <ConversationView conversation={selected} />
+            <ConversationView
+              conversation={selected}
+              onBack={() => setMobilePane("list")}
+              onOpenContext={() => setContextOpen(true)}
+            />
           ) : (
-            <div className="flex flex-1 flex-col items-center justify-center gap-2 px-6 text-center">
-              <div className="flex h-12 w-12 items-center justify-center rounded-full bg-muted text-muted-foreground">
-                <MessageSquare className="h-5 w-5" />
-              </div>
-              <p className="text-sm font-medium">Select a conversation</p>
-              <p className="max-w-[280px] text-xs text-muted-foreground">
-                Pick a thread on the left to view its timeline, ownership, and linked order.
-              </p>
-            </div>
+            <EmptyState
+              icon={MessageSquare}
+              title="Select a conversation"
+              description="Pick a thread on the left to view its timeline, ownership, and linked order."
+            />
           )}
         </section>
 
-        {/* RIGHT: Customer + ownership + order */}
-        <aside className="hidden min-h-0 overflow-y-auto border-l lg:block">
+        {/* RIGHT: Customer + ownership + order — desktop only */}
+        <aside className="hidden min-h-0 overflow-y-auto border-l xl:block">
           {selected ? (
             <CustomerPanel conversation={selected} />
           ) : (
-            <div className="p-6 text-xs text-muted-foreground">No conversation selected.</div>
+            <EmptyState size="sm" title="No conversation selected" />
           )}
         </aside>
       </div>
+
+      {/* Mobile / tablet context drawer */}
+      <Sheet open={contextOpen} onOpenChange={setContextOpen}>
+        <SheetContent side="right" className="w-full max-w-md overflow-y-auto p-0 sm:max-w-md">
+          <SheetTitle className="sr-only">Customer & order context</SheetTitle>
+          {selected ? (
+            <CustomerPanel conversation={selected} />
+          ) : (
+            <EmptyState size="sm" title="No conversation selected" />
+          )}
+        </SheetContent>
+      </Sheet>
     </div>
   );
 }
 
-function ConversationView({ conversation }: { conversation: Conversation }) {
+function ConversationView({
+  conversation,
+  onBack,
+  onOpenContext,
+}: {
+  conversation: Conversation;
+  onBack: () => void;
+  onOpenContext: () => void;
+}) {
   const ownerLabel =
     conversation.owner === "ai" ? "AI" : (conversation.assignedTo?.name ?? "Operator");
 
   return (
     <>
       {/* Conversation header */}
-      <div className="flex items-center justify-between gap-3 border-b bg-card/40 px-6 py-3">
-        <div className="min-w-0">
-          <div className="flex items-center gap-2">
-            <h2 className="truncate font-display text-base font-semibold">
-              {conversation.customer.name}
-            </h2>
-            <ChannelBadge channel={conversation.channel} withLabel />
-            <StatusBadge status={conversation.status} />
-            <OwnerBadge owner={conversation.owner} />
+      <div className="flex items-center justify-between gap-3 border-b bg-card/40 px-4 py-3 md:px-6">
+        <div className="flex min-w-0 items-center gap-2">
+          {/* Mobile back */}
+          <Button
+            variant="ghost"
+            size="icon"
+            className="h-8 w-8 md:hidden"
+            onClick={onBack}
+            aria-label="Back to inbox list"
+          >
+            <ChevronLeft className="h-4 w-4" />
+          </Button>
+          <div className="min-w-0">
+            <div className="flex flex-wrap items-center gap-2">
+              <h2 className="truncate font-display text-base font-semibold">
+                {conversation.customer.name}
+              </h2>
+              <ChannelBadge channel={conversation.channel} withLabel />
+              <StatusBadge status={conversation.status} />
+              <OwnerBadge owner={conversation.owner} />
+            </div>
+            <p className="mt-0.5 truncate text-xs text-muted-foreground">
+              {conversation.customer.identityLabel}
+              {conversation.assignedTo && (
+                <>
+                  {" · "}assigned to{" "}
+                  <span className="font-medium text-foreground">
+                    {conversation.assignedTo.name}
+                  </span>
+                </>
+              )}
+            </p>
           </div>
-          <p className="mt-0.5 truncate text-xs text-muted-foreground">
-            {conversation.customer.identityLabel}
-            {conversation.assignedTo && (
-              <>
-                {" · "}assigned to{" "}
-                <span className="font-medium text-foreground">{conversation.assignedTo.name}</span>
-              </>
-            )}
-          </p>
         </div>
-        <div className="flex items-center gap-1">
+        <div className="flex shrink-0 items-center gap-1">
           {conversation.status === "needs_handoff" && (
             <Button size="sm" className="h-8 gap-1.5 bg-warn text-warn-foreground hover:bg-warn/90">
-              <ArrowRightLeft className="h-3.5 w-3.5" /> Take handoff
+              <ArrowRightLeft className="h-3.5 w-3.5" />
+              <span className="hidden sm:inline">Take handoff</span>
             </Button>
           )}
-          <Button variant="outline" size="sm" className="h-8">
+          <Button
+            variant="outline"
+            size="icon"
+            className="h-8 w-8 xl:hidden"
+            onClick={onOpenContext}
+            aria-label="Open customer and order context"
+          >
+            <PanelRight className="h-4 w-4" />
+          </Button>
+          <Button variant="outline" size="sm" className="hidden h-8 sm:inline-flex">
             Close
           </Button>
         </div>
@@ -338,8 +397,8 @@ function ConversationView({ conversation }: { conversation: Conversation }) {
 
       {/* Handoff banner */}
       {conversation.status === "needs_handoff" && (
-        <div className="border-b border-warn/40 [background:color-mix(in_oklab,var(--warn)_15%,var(--background))] px-6 py-2">
-          <div className="flex items-center gap-2 text-xs">
+        <div className="border-b border-warn/40 [background:color-mix(in_oklab,var(--warn)_15%,var(--background))] px-4 py-2 md:px-6">
+          <div className="flex flex-wrap items-center gap-2 text-xs">
             <CircleAlert className="h-3.5 w-3.5 text-warn-foreground" />
             <span className="font-medium text-warn-foreground">
               AI requested handoff to operator
