@@ -3,7 +3,17 @@ import { PageHeader } from "@/components/shell/PageHeader";
 import { Card } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import { Bot, User, Clock, ChevronRight, Inbox as InboxIcon, CircleAlert } from "lucide-react";
+import {
+  Bot,
+  User,
+  Clock,
+  ChevronRight,
+  Inbox as InboxIcon,
+  CircleAlert,
+  Filter,
+  Search,
+  MessageSquare,
+} from "lucide-react";
 
 export const Route = createFileRoute("/app/$tenant/inbox")({
   head: () => ({ meta: [{ title: "Inbox · Workspace" }] }),
@@ -19,19 +29,36 @@ const buckets = [
   { id: "approval", label: "Needs approval", count: 2 },
 ];
 
-const sampleThreads = [
-  { id: "1", customer: "Marco R.", channel: "WhatsApp", preview: "Table for 4 tomorrow 8pm…", state: "ai", time: "2m" },
-  { id: "2", customer: "Lena F.", channel: "Web", preview: "Can I add gluten-free pasta?", state: "operator", time: "5m" },
-  { id: "3", customer: "+44 7700 900123", channel: "SMS", preview: "Order confirmation needed", state: "approval", time: "9m" },
-  { id: "4", customer: "Karim S.", channel: "WhatsApp", preview: "Thanks, see you Friday!", state: "waiting", time: "22m" },
+const channels = [
+  { id: "wa", label: "WhatsApp", count: 14 },
+  { id: "web", label: "Web chat", count: 6 },
+  { id: "sms", label: "SMS", count: 4 },
 ];
 
-function StateBadge({ state }: { state: string }) {
-  if (state === "ai") return <Badge className="gap-1 bg-ai text-ai-foreground hover:bg-ai"><Bot className="h-3 w-3" />AI</Badge>;
-  if (state === "operator") return <Badge className="gap-1 bg-operator text-operator-foreground hover:bg-operator"><User className="h-3 w-3" />Operator</Badge>;
-  if (state === "waiting") return <Badge variant="outline" className="gap-1"><Clock className="h-3 w-3" />Waiting</Badge>;
-  if (state === "approval") return <Badge className="gap-1 bg-warn text-warn-foreground hover:bg-warn"><CircleAlert className="h-3 w-3" />Approval</Badge>;
-  return <Badge variant="outline">{state}</Badge>;
+type ThreadState = "ai" | "operator" | "waiting" | "approval";
+const sampleThreads: { id: string; customer: string; channel: string; preview: string; state: ThreadState; time: string; unread?: number }[] = [
+  { id: "1", customer: "Marco Rossi", channel: "WhatsApp", preview: "Table for 4 tomorrow 8pm — possible by the window?", state: "ai", time: "2m", unread: 1 },
+  { id: "2", customer: "Lena Foster", channel: "Web", preview: "Can I add gluten-free pasta to my order #1042?", state: "operator", time: "5m" },
+  { id: "3", customer: "+44 7700 900123", channel: "SMS", preview: "Order confirmation needed before kitchen sends", state: "approval", time: "9m", unread: 2 },
+  { id: "4", customer: "Karim Saidi", channel: "WhatsApp", preview: "Thanks, see you Friday at 7!", state: "waiting", time: "22m" },
+  { id: "5", customer: "Aiko Tanaka", channel: "Web", preview: "Do you take dogs on the terrace?", state: "ai", time: "34m" },
+  { id: "6", customer: "Pedro Alves", channel: "WhatsApp", preview: "Need to cancel reservation for tonight", state: "operator", time: "1h" },
+];
+
+function StateBadge({ state }: { state: ThreadState }) {
+  const map = {
+    ai: { cls: "bg-ai/15 text-ai border-ai/30", icon: Bot, label: "AI" },
+    operator: { cls: "bg-operator/25 text-operator-foreground border-operator/40", icon: User, label: "Operator" },
+    waiting: { cls: "bg-muted text-muted-foreground border-border", icon: Clock, label: "Waiting" },
+    approval: { cls: "bg-warn/30 text-warn-foreground border-warn/50", icon: CircleAlert, label: "Approval" },
+  } as const;
+  const { cls, icon: Icon, label } = map[state];
+  return (
+    <span className={`inline-flex h-5 items-center gap-1 rounded-md border px-1.5 text-[10px] font-medium uppercase tracking-wider ${cls}`}>
+      <Icon className="h-3 w-3" />
+      {label}
+    </span>
+  );
 }
 
 function InboxPage() {
@@ -39,23 +66,58 @@ function InboxPage() {
     <>
       <PageHeader
         title="Inbox"
-        description="The primary operational workspace. AI-active and operator-active states are visually distinct."
-        actions={<Button size="sm" variant="outline">Filters</Button>}
+        description="Primary operational area. Conversation states (AI / Operator / Waiting / Approval) are visually distinct."
+        actions={
+          <>
+            <Button variant="outline" size="sm" className="gap-1.5">
+              <Filter className="h-3.5 w-3.5" /> Filters
+            </Button>
+            <Button size="sm" className="gap-1.5">
+              <MessageSquare className="h-3.5 w-3.5" /> New conversation
+            </Button>
+          </>
+        }
       />
-      <div className="grid grid-cols-1 gap-0 lg:grid-cols-[260px_1fr]">
-        {/* Buckets */}
-        <aside className="border-b lg:border-b-0 lg:border-r">
-          <div className="px-3 py-3">
-            <h2 className="px-2 text-xs font-semibold uppercase tracking-wider text-muted-foreground">Views</h2>
+
+      <div className="grid grid-cols-1 lg:grid-cols-[260px_minmax(0,1fr)_320px]">
+        {/* Buckets / channels */}
+        <aside className="border-b bg-card/40 lg:border-b-0 lg:border-r">
+          <div className="p-3">
+            <h3 className="px-2 text-[10px] font-semibold uppercase tracking-[0.08em] text-muted-foreground">
+              Views
+            </h3>
             <ul className="mt-2 space-y-0.5">
               {buckets.map((b, i) => (
                 <li key={b.id}>
-                  <button className={`flex w-full items-center justify-between rounded-md px-2 py-1.5 text-sm hover:bg-accent ${i === 0 ? "bg-accent font-medium" : ""}`}>
+                  <button
+                    className={`flex w-full items-center justify-between rounded-md px-2 py-1.5 text-sm transition-colors hover:bg-accent ${
+                      i === 0 ? "bg-accent font-medium" : "text-foreground/80"
+                    }`}
+                  >
                     <span className="flex items-center gap-2">
                       <InboxIcon className="h-3.5 w-3.5 text-muted-foreground" />
                       {b.label}
                     </span>
-                    <Badge variant="secondary" className="font-normal">{b.count}</Badge>
+                    <Badge variant="secondary" className="h-5 min-w-5 justify-center px-1.5 font-mono text-[10px]">
+                      {b.count}
+                    </Badge>
+                  </button>
+                </li>
+              ))}
+            </ul>
+
+            <h3 className="mt-5 px-2 text-[10px] font-semibold uppercase tracking-[0.08em] text-muted-foreground">
+              Channels
+            </h3>
+            <ul className="mt-2 space-y-0.5">
+              {channels.map((c) => (
+                <li key={c.id}>
+                  <button className="flex w-full items-center justify-between rounded-md px-2 py-1.5 text-sm text-foreground/80 transition-colors hover:bg-accent">
+                    <span className="flex items-center gap-2">
+                      <span className="h-1.5 w-1.5 rounded-full bg-success" />
+                      {c.label}
+                    </span>
+                    <span className="text-xs text-muted-foreground tabular-nums">{c.count}</span>
                   </button>
                 </li>
               ))}
@@ -64,37 +126,82 @@ function InboxPage() {
         </aside>
 
         {/* Thread list */}
-        <section>
+        <section className="min-w-0 border-r-0 lg:border-r">
+          <div className="sticky top-14 z-10 flex items-center gap-2 border-b bg-background/85 px-4 py-2 backdrop-blur">
+            <Search className="h-3.5 w-3.5 text-muted-foreground" />
+            <input
+              placeholder="Search this view…"
+              className="flex-1 bg-transparent text-sm outline-none placeholder:text-muted-foreground"
+            />
+            <span className="text-xs text-muted-foreground">{sampleThreads.length} threads</span>
+          </div>
+
           <ul className="divide-y">
-            {sampleThreads.map((t) => (
+            {sampleThreads.map((t, idx) => (
               <li key={t.id}>
-                <button className="flex w-full items-center gap-3 px-5 py-3 text-left hover:bg-accent/50">
-                  <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-muted text-xs font-semibold">
-                    {t.customer.split(" ").map((s) => s[0]).join("").slice(0, 2)}
+                <button
+                  className={`flex w-full items-start gap-3 px-4 py-3 text-left transition-colors hover:bg-accent/60 ${
+                    idx === 0 ? "bg-primary/5" : ""
+                  }`}
+                >
+                  <div className="relative flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-muted text-[11px] font-semibold text-foreground">
+                    {t.customer
+                      .split(" ")
+                      .map((s) => s[0])
+                      .filter((c) => /[A-Za-z]/.test(c))
+                      .slice(0, 2)
+                      .join("")}
+                    {t.unread && (
+                      <span className="absolute -right-0.5 -top-0.5 flex h-4 min-w-4 items-center justify-center rounded-full bg-primary px-1 text-[9px] font-semibold text-primary-foreground ring-2 ring-background">
+                        {t.unread}
+                      </span>
+                    )}
                   </div>
                   <div className="min-w-0 flex-1">
                     <div className="flex items-center gap-2">
-                      <span className="truncate text-sm font-medium">{t.customer}</span>
-                      <span className="text-xs text-muted-foreground">· {t.channel}</span>
-                      <span className="ml-auto text-xs text-muted-foreground">{t.time}</span>
+                      <span className="truncate text-sm font-semibold">{t.customer}</span>
+                      <span className="text-[11px] text-muted-foreground">· {t.channel}</span>
+                      <span className="ml-auto text-[11px] text-muted-foreground tabular-nums">{t.time}</span>
                     </div>
                     <p className="mt-0.5 truncate text-sm text-muted-foreground">{t.preview}</p>
+                    <div className="mt-1.5 flex items-center gap-2">
+                      <StateBadge state={t.state} />
+                      <ChevronRight className="ml-auto h-3.5 w-3.5 text-muted-foreground" />
+                    </div>
                   </div>
-                  <StateBadge state={t.state} />
-                  <ChevronRight className="h-4 w-4 shrink-0 text-muted-foreground" />
                 </button>
               </li>
             ))}
           </ul>
-
-          <Card className="m-5 border-dashed p-4 text-sm text-muted-foreground">
-            <p className="font-medium text-foreground">Inbox detail and reply composer arrive in a later phase.</p>
-            <p className="mt-1">
-              This phase only establishes IA and primary placement. State badges (AI / Operator / Waiting / Approval),
-              ownership, assignment, handoff, and release-to-AI come from backend conversation detail.
-            </p>
-          </Card>
         </section>
+
+        {/* Detail preview */}
+        <aside className="hidden border-l bg-card/40 lg:block">
+          <div className="flex h-full flex-col items-center justify-center gap-3 p-6 text-center">
+            <div className="flex h-12 w-12 items-center justify-center rounded-full bg-muted text-muted-foreground">
+              <MessageSquare className="h-5 w-5" />
+            </div>
+            <h3 className="font-display text-sm font-semibold">Conversation detail</h3>
+            <p className="max-w-[220px] text-xs text-muted-foreground">
+              Message thread, ownership, assignment, handoff, release-to-AI, and order summary will live here. Built in a
+              later phase against the backend conversation contract.
+            </p>
+            <Card className="mt-2 w-full p-3 text-left text-xs">
+              <div className="flex items-center justify-between">
+                <span className="font-semibold">Backend contract</span>
+                <Badge variant="outline" className="h-4 px-1 text-[9px] font-normal">
+                  Truth
+                </Badge>
+              </div>
+              <ul className="mt-2 space-y-1 text-muted-foreground">
+                <li>· conversation detail · operator reply</li>
+                <li>· assignment / ownership · AI reply</li>
+                <li>· AI handoff · release-to-AI</li>
+                <li>· order from conversation · summary</li>
+              </ul>
+            </Card>
+          </div>
+        </aside>
       </div>
     </>
   );
