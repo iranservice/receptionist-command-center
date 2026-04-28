@@ -49,7 +49,10 @@ function Landing() {
                 Platform Ops
               </div>
             </div>
-            <Badge variant="outline" className="ml-2 hidden h-5 px-1.5 text-[10px] font-normal sm:inline-flex">
+            <Badge
+              variant="outline"
+              className="ml-2 hidden h-5 px-1.5 text-[10px] font-normal sm:inline-flex"
+            >
               LV-1 · App shell
             </Badge>
           </div>
@@ -79,8 +82,9 @@ function Landing() {
               <span className="text-primary">AI receptionist</span>.
             </h1>
             <p className="mt-4 max-w-xl text-base text-muted-foreground">
-              An inbox-first, role-aware platform with a clean separation between platform operations and tenant
-              workspaces. Restaurant-shaped today, ready for clinics, salons, supermarkets, and more.
+              An inbox-first, role-aware platform with a clean separation between platform
+              operations and tenant workspaces. Restaurant-shaped today, ready for clinics, salons,
+              supermarkets, and more.
             </p>
             <div className="mt-6 flex flex-wrap items-center gap-2">
               <Button asChild size="lg" className="gap-2">
@@ -117,9 +121,12 @@ function Landing() {
         <section className="mt-16">
           <div className="flex items-end justify-between">
             <div>
-              <h2 className="font-display text-2xl font-semibold tracking-tight">Two workspaces, one platform</h2>
+              <h2 className="font-display text-2xl font-semibold tracking-tight">
+                Two workspaces, one platform
+              </h2>
               <p className="mt-1 text-sm text-muted-foreground">
-                Platform operations and tenant operations stay clearly separated — by color, by route, by intent.
+                Platform operations and tenant operations stay clearly separated — by color, by
+                route, by intent.
               </p>
             </div>
           </div>
@@ -148,9 +155,12 @@ function Landing() {
 
         {/* Three roles */}
         <section className="mt-14">
-          <h2 className="font-display text-xl font-semibold tracking-tight">Three role-shaped experiences</h2>
+          <h2 className="font-display text-xl font-semibold tracking-tight">
+            Three role-shaped experiences
+          </h2>
           <p className="mt-1 text-sm text-muted-foreground">
-            Switch demo roles inside any workspace — the sidebar reshapes to match. Backend remains source of truth.
+            Switch demo roles inside any workspace — the sidebar reshapes to match. Backend remains
+            source of truth.
           </p>
           <div className="mt-5 grid gap-3 md:grid-cols-3">
             <RoleCard
@@ -183,9 +193,21 @@ function Landing() {
 
         {/* Principles */}
         <section className="mt-14 grid gap-3 md:grid-cols-3">
-          <Principle icon={Inbox} title="Inbox-first" desc="The most prominent nav item. AI vs Operator vs Waiting vs Approval — all visually distinct." />
-          <Principle icon={ShieldCheck} title="Backend is truth" desc="UI never invents permissions, business rules, or available actions." />
-          <Principle icon={Plug} title="Tenant-owned payments" desc="Tenant payments use the tenant's own gateway. Never the platform's." />
+          <Principle
+            icon={Inbox}
+            title="Inbox-first"
+            desc="The most prominent nav item. AI vs Operator vs Waiting vs Approval — all visually distinct."
+          />
+          <Principle
+            icon={ShieldCheck}
+            title="Backend is truth"
+            desc="UI never invents permissions, business rules, or available actions."
+          />
+          <Principle
+            icon={Plug}
+            title="Tenant-owned payments"
+            desc="Tenant payments use the tenant's own gateway. Never the platform's."
+          />
         </section>
       </main>
 
@@ -220,9 +242,18 @@ function WorkspaceCard({
   chips: string[];
   cta: { to: string; label: string };
 }) {
-  const tone = level === "A"
-    ? { bar: "bg-level-a", chip: "bg-level-a/12 text-level-a", btn: "bg-level-a hover:bg-level-a/90 text-level-a-foreground" }
-    : { bar: "bg-level-b", chip: "bg-level-b/12 text-level-b", btn: "bg-level-b hover:bg-level-b/90 text-level-b-foreground" };
+  const tone =
+    level === "A"
+      ? {
+          bar: "bg-level-a",
+          chip: "bg-level-a/12 text-level-a",
+          btn: "bg-level-a hover:bg-level-a/90 text-level-a-foreground",
+        }
+      : {
+          bar: "bg-level-b",
+          chip: "bg-level-b/12 text-level-b",
+          btn: "bg-level-b hover:bg-level-b/90 text-level-b-foreground",
+        };
 
   return (
     <Card className="relative overflow-hidden p-0 shadow-sm transition-shadow hover:shadow-md">
@@ -242,15 +273,18 @@ function WorkspaceCard({
         <p className="mt-4 text-sm text-muted-foreground">{desc}</p>
         <div className="mt-4 flex flex-wrap gap-1.5">
           {chips.map((c) => (
-            <span key={c} className={`inline-flex h-6 items-center rounded-md px-2 text-[11px] font-medium ${tone.chip}`}>
+            <span
+              key={c}
+              className={`inline-flex h-6 items-center rounded-md px-2 text-[11px] font-medium ${tone.chip}`}
+            >
               {c}
             </span>
           ))}
         </div>
         <Button asChild className={`mt-5 gap-1.5 ${tone.btn}`}>
-          <a href={cta.to}>
+          <Link to={cta.to}>
             {cta.label} <ArrowRight className="h-3.5 w-3.5" />
-          </a>
+          </Link>
         </Button>
       </div>
     </Card>
@@ -276,7 +310,9 @@ function RoleCard({
 }) {
   const chip = tone === "a" ? "bg-level-a/12 text-level-a" : "bg-level-b/12 text-level-b";
   return (
-    <Card className={`p-5 shadow-xs transition-all hover:shadow-md ${highlight ? "ring-1 ring-primary/30" : ""}`}>
+    <Card
+      className={`p-5 shadow-xs transition-all hover:shadow-md ${highlight ? "ring-1 ring-primary/30" : ""}`}
+    >
       <div className="flex items-center gap-2.5">
         <div className={`flex h-9 w-9 items-center justify-center rounded-md ${chip}`}>
           <Icon className="h-4 w-4" />
@@ -285,13 +321,17 @@ function RoleCard({
           <div className="text-sm font-semibold">{title}</div>
           <div className="text-[10px] uppercase tracking-wider text-muted-foreground">{level}</div>
         </div>
-        {highlight && <Badge variant="secondary" className="ml-auto h-5 px-1.5 text-[10px] font-normal">Primary</Badge>}
+        {highlight && (
+          <Badge variant="secondary" className="ml-auto h-5 px-1.5 text-[10px] font-normal">
+            Primary
+          </Badge>
+        )}
       </div>
       <p className="mt-3 text-sm text-muted-foreground">{desc}</p>
       <Button asChild size="sm" variant="ghost" className="mt-3 -ml-2 gap-1 text-foreground/80">
-        <a href={to}>
+        <Link to={to}>
           Enter <ArrowRight className="h-3.5 w-3.5" />
-        </a>
+        </Link>
       </Button>
     </Card>
   );
@@ -356,8 +396,12 @@ function DashboardPreview() {
               { l: "Approval", v: "2", c: "bg-warn/30 text-warn-foreground" },
             ].map((s) => (
               <div key={s.l} className="rounded-md border bg-card p-2">
-                <div className="text-[9px] uppercase tracking-wider text-muted-foreground">{s.l}</div>
-                <div className={`mt-0.5 inline-flex items-center rounded px-1 text-sm font-semibold tabular-nums ${s.c}`}>
+                <div className="text-[9px] uppercase tracking-wider text-muted-foreground">
+                  {s.l}
+                </div>
+                <div
+                  className={`mt-0.5 inline-flex items-center rounded px-1 text-sm font-semibold tabular-nums ${s.c}`}
+                >
                   {s.v}
                 </div>
               </div>
@@ -369,10 +413,7 @@ function DashboardPreview() {
               { name: "Lena F.", state: "OP", cls: "bg-operator/25 text-operator-foreground" },
               { name: "+44 7700…", state: "APR", cls: "bg-warn/30 text-warn-foreground" },
             ].map((r) => (
-              <div
-                key={r.name}
-                className="flex items-center gap-2 rounded-md border bg-card p-1.5"
-              >
+              <div key={r.name} className="flex items-center gap-2 rounded-md border bg-card p-1.5">
                 <div className="h-5 w-5 rounded-full bg-muted" />
                 <div className="text-[11px] font-medium">{r.name}</div>
                 <span className={`ml-auto rounded px-1 text-[9px] font-semibold ${r.cls}`}>

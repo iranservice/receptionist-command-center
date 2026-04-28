@@ -5,7 +5,10 @@ export const Route = createFileRoute("/platform")({
   head: () => ({
     meta: [
       { title: "Platform · AI Receptionist" },
-      { name: "description", content: "Platform-level operations for the AI receptionist platform." },
+      {
+        name: "description",
+        content: "Platform-level operations for the AI receptionist platform.",
+      },
       { name: "robots", content: "noindex" },
     ],
   }),

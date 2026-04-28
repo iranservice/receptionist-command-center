@@ -1,5 +1,10 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
-import { PageHeader, StatCard, SectionHeader, PlaceholderArea } from "@/components/shell/PageHeader";
+import {
+  PageHeader,
+  StatCard,
+  SectionHeader,
+  PlaceholderArea,
+} from "@/components/shell/PageHeader";
 import { Card } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -28,11 +33,18 @@ function PlatformDashboard() {
             <Badge variant="outline" className="gap-1 font-normal">
               <span className="h-1.5 w-1.5 rounded-full bg-success" /> All systems normal
             </Badge>
-            <Badge variant="outline" className="font-normal">Region: EU-West</Badge>
+            <Badge variant="outline" className="font-normal">
+              Region: EU-West
+            </Badge>
           </>
         }
         actions={
-          <Button asChild size="sm" variant="default" className="gap-1.5 bg-level-a text-level-a-foreground hover:bg-level-a/90">
+          <Button
+            asChild
+            size="sm"
+            variant="default"
+            className="gap-1.5 bg-level-a text-level-a-foreground hover:bg-level-a/90"
+          >
             <Link to="/platform/tenants">
               <Building2 className="h-4 w-4" /> Manage tenants
             </Link>
@@ -44,10 +56,38 @@ function PlatformDashboard() {
         <section>
           <SectionHeader title="This week" description="Aggregated platform metrics." />
           <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
-            <StatCard label="Active tenants" value="38" delta="+2" trend="up" icon={Building2} hint="vs. last week" />
-            <StatCard label="Conversations" value="14.2k" delta="+11%" trend="up" icon={Activity} tone="ai" />
-            <StatCard label="MRR" value="€18.4k" delta="+4.6%" trend="up" icon={Receipt} tone="success" />
-            <StatCard label="Open support" value="6" delta="-3" trend="down" icon={HeadphonesIcon} tone="warn" />
+            <StatCard
+              label="Active tenants"
+              value="38"
+              delta="+2"
+              trend="up"
+              icon={Building2}
+              hint="vs. last week"
+            />
+            <StatCard
+              label="Conversations"
+              value="14.2k"
+              delta="+11%"
+              trend="up"
+              icon={Activity}
+              tone="ai"
+            />
+            <StatCard
+              label="MRR"
+              value="€18.4k"
+              delta="+4.6%"
+              trend="up"
+              icon={Receipt}
+              tone="success"
+            />
+            <StatCard
+              label="Open support"
+              value="6"
+              delta="-3"
+              trend="down"
+              icon={HeadphonesIcon}
+              tone="warn"
+            />
           </div>
         </section>
 
@@ -127,7 +167,10 @@ function PlatformDashboard() {
         </section>
 
         <section>
-          <SectionHeader title="Platform areas" description="Each area will fill in across upcoming phases." />
+          <SectionHeader
+            title="Platform areas"
+            description="Each area will fill in across upcoming phases."
+          />
           <div className="grid gap-3 md:grid-cols-2 lg:grid-cols-3">
             <PlaceholderArea
               icon={Receipt}
@@ -136,10 +179,30 @@ function PlatformDashboard() {
               notes={["Plan catalog and tenant subscription status."]}
               contract="Distinct from tenant→customer payments — those use the tenant's own gateway."
             />
-            <PlaceholderArea icon={Megaphone} scope="Level A" title="Internal sales" notes={["Pipeline, leads, demos, conversions."]} />
-            <PlaceholderArea icon={HeadphonesIcon} scope="Level A" title="Platform support" notes={["Tickets opened by tenant admins."]} />
-            <PlaceholderArea icon={Server} scope="Level A" title="System & integrations" notes={["AI providers, telephony, base channels — platform-managed."]} />
-            <PlaceholderArea icon={Building2} scope="Level A" title="Tenants" notes={["Directory, type, plan, status; future provisioning."]} />
+            <PlaceholderArea
+              icon={Megaphone}
+              scope="Level A"
+              title="Internal sales"
+              notes={["Pipeline, leads, demos, conversions."]}
+            />
+            <PlaceholderArea
+              icon={HeadphonesIcon}
+              scope="Level A"
+              title="Platform support"
+              notes={["Tickets opened by tenant admins."]}
+            />
+            <PlaceholderArea
+              icon={Server}
+              scope="Level A"
+              title="System & integrations"
+              notes={["AI providers, telephony, base channels — platform-managed."]}
+            />
+            <PlaceholderArea
+              icon={Building2}
+              scope="Level A"
+              title="Tenants"
+              notes={["Directory, type, plan, status; future provisioning."]}
+            />
           </div>
         </section>
       </div>

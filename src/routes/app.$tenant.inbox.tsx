@@ -36,25 +36,87 @@ const channels = [
 ];
 
 type ThreadState = "ai" | "operator" | "waiting" | "approval";
-const sampleThreads: { id: string; customer: string; channel: string; preview: string; state: ThreadState; time: string; unread?: number }[] = [
-  { id: "1", customer: "Marco Rossi", channel: "WhatsApp", preview: "Table for 4 tomorrow 8pm — possible by the window?", state: "ai", time: "2m", unread: 1 },
-  { id: "2", customer: "Lena Foster", channel: "Web", preview: "Can I add gluten-free pasta to my order #1042?", state: "operator", time: "5m" },
-  { id: "3", customer: "+44 7700 900123", channel: "SMS", preview: "Order confirmation needed before kitchen sends", state: "approval", time: "9m", unread: 2 },
-  { id: "4", customer: "Karim Saidi", channel: "WhatsApp", preview: "Thanks, see you Friday at 7!", state: "waiting", time: "22m" },
-  { id: "5", customer: "Aiko Tanaka", channel: "Web", preview: "Do you take dogs on the terrace?", state: "ai", time: "34m" },
-  { id: "6", customer: "Pedro Alves", channel: "WhatsApp", preview: "Need to cancel reservation for tonight", state: "operator", time: "1h" },
+const sampleThreads: {
+  id: string;
+  customer: string;
+  channel: string;
+  preview: string;
+  state: ThreadState;
+  time: string;
+  unread?: number;
+}[] = [
+  {
+    id: "1",
+    customer: "Marco Rossi",
+    channel: "WhatsApp",
+    preview: "Table for 4 tomorrow 8pm — possible by the window?",
+    state: "ai",
+    time: "2m",
+    unread: 1,
+  },
+  {
+    id: "2",
+    customer: "Lena Foster",
+    channel: "Web",
+    preview: "Can I add gluten-free pasta to my order #1042?",
+    state: "operator",
+    time: "5m",
+  },
+  {
+    id: "3",
+    customer: "+44 7700 900123",
+    channel: "SMS",
+    preview: "Order confirmation needed before kitchen sends",
+    state: "approval",
+    time: "9m",
+    unread: 2,
+  },
+  {
+    id: "4",
+    customer: "Karim Saidi",
+    channel: "WhatsApp",
+    preview: "Thanks, see you Friday at 7!",
+    state: "waiting",
+    time: "22m",
+  },
+  {
+    id: "5",
+    customer: "Aiko Tanaka",
+    channel: "Web",
+    preview: "Do you take dogs on the terrace?",
+    state: "ai",
+    time: "34m",
+  },
+  {
+    id: "6",
+    customer: "Pedro Alves",
+    channel: "WhatsApp",
+    preview: "Need to cancel reservation for tonight",
+    state: "operator",
+    time: "1h",
+  },
 ];
 
 function StateBadge({ state }: { state: ThreadState }) {
   const map = {
     ai: { cls: "bg-ai/15 text-ai border-ai/30", icon: Bot, label: "AI" },
-    operator: { cls: "bg-operator/25 text-operator-foreground border-operator/40", icon: User, label: "Operator" },
+    operator: {
+      cls: "bg-operator/25 text-operator-foreground border-operator/40",
+      icon: User,
+      label: "Operator",
+    },
     waiting: { cls: "bg-muted text-muted-foreground border-border", icon: Clock, label: "Waiting" },
-    approval: { cls: "bg-warn/30 text-warn-foreground border-warn/50", icon: CircleAlert, label: "Approval" },
+    approval: {
+      cls: "bg-warn/30 text-warn-foreground border-warn/50",
+      icon: CircleAlert,
+      label: "Approval",
+    },
   } as const;
   const { cls, icon: Icon, label } = map[state];
   return (
-    <span className={`inline-flex h-5 items-center gap-1 rounded-md border px-1.5 text-[10px] font-medium uppercase tracking-wider ${cls}`}>
+    <span
+      className={`inline-flex h-5 items-center gap-1 rounded-md border px-1.5 text-[10px] font-medium uppercase tracking-wider ${cls}`}
+    >
       <Icon className="h-3 w-3" />
       {label}
     </span>
@@ -98,7 +160,10 @@ function InboxPage() {
                       <InboxIcon className="h-3.5 w-3.5 text-muted-foreground" />
                       {b.label}
                     </span>
-                    <Badge variant="secondary" className="h-5 min-w-5 justify-center px-1.5 font-mono text-[10px]">
+                    <Badge
+                      variant="secondary"
+                      className="h-5 min-w-5 justify-center px-1.5 font-mono text-[10px]"
+                    >
                       {b.count}
                     </Badge>
                   </button>
@@ -161,7 +226,9 @@ function InboxPage() {
                     <div className="flex items-center gap-2">
                       <span className="truncate text-sm font-semibold">{t.customer}</span>
                       <span className="text-[11px] text-muted-foreground">· {t.channel}</span>
-                      <span className="ml-auto text-[11px] text-muted-foreground tabular-nums">{t.time}</span>
+                      <span className="ml-auto text-[11px] text-muted-foreground tabular-nums">
+                        {t.time}
+                      </span>
                     </div>
                     <p className="mt-0.5 truncate text-sm text-muted-foreground">{t.preview}</p>
                     <div className="mt-1.5 flex items-center gap-2">
@@ -183,8 +250,8 @@ function InboxPage() {
             </div>
             <h3 className="font-display text-sm font-semibold">Conversation detail</h3>
             <p className="max-w-[220px] text-xs text-muted-foreground">
-              Message thread, ownership, assignment, handoff, release-to-AI, and order summary will live here. Built in a
-              later phase against the backend conversation contract.
+              Message thread, ownership, assignment, handoff, release-to-AI, and order summary will
+              live here. Built in a later phase against the backend conversation contract.
             </p>
             <Card className="mt-2 w-full p-3 text-left text-xs">
               <div className="flex items-center justify-between">

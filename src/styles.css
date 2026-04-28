@@ -130,7 +130,8 @@
   /* Elevations */
   --shadow-xs: 0 1px 2px 0 oklch(0.2 0.03 250 / 0.05);
   --shadow-sm: 0 1px 3px 0 oklch(0.2 0.03 250 / 0.06), 0 1px 2px -1px oklch(0.2 0.03 250 / 0.04);
-  --shadow-md: 0 4px 12px -2px oklch(0.2 0.03 250 / 0.08), 0 2px 4px -2px oklch(0.2 0.03 250 / 0.04);
+  --shadow-md:
+    0 4px 12px -2px oklch(0.2 0.03 250 / 0.08), 0 2px 4px -2px oklch(0.2 0.03 250 / 0.04);
   --shadow-lg: 0 12px 32px -8px oklch(0.2 0.05 260 / 0.18);
 
   --sidebar: oklch(0.99 0.003 250);
@@ -211,7 +212,10 @@
     font-feature-settings: "cv11", "ss01";
   }
 
-  h1, h2, h3, h4 {
+  h1,
+  h2,
+  h3,
+  h4 {
     font-family: var(--font-display);
     letter-spacing: -0.01em;
   }
@@ -228,14 +232,18 @@
 
 /* Level context strip behind top bar */
 .context-strip-a {
-  background: linear-gradient(90deg,
+  background: linear-gradient(
+    90deg,
     color-mix(in oklab, var(--level-a) 14%, transparent),
     color-mix(in oklab, var(--level-a) 4%, transparent) 55%,
-    transparent);
+    transparent
+  );
 }
 .context-strip-b {
-  background: linear-gradient(90deg,
+  background: linear-gradient(
+    90deg,
     color-mix(in oklab, var(--level-b) 14%, transparent),
     color-mix(in oklab, var(--level-b) 4%, transparent) 55%,
-    transparent);
+    transparent
+  );
 }

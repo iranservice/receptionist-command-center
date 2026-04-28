@@ -147,7 +147,10 @@ export function PlaceholderArea({
             {scope}
           </Badge>
         </div>
-        <Badge variant="outline" className="h-5 px-1.5 text-[10px] font-normal text-muted-foreground">
+        <Badge
+          variant="outline"
+          className="h-5 px-1.5 text-[10px] font-normal text-muted-foreground"
+        >
           Structure · later phase
         </Badge>
       </div>

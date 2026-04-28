@@ -4,7 +4,10 @@ import { PageHeader, Placeholder } from "@/components/shell/PageHeader";
 export const Route = createFileRoute("/platform/support")({
   component: () => (
     <>
-      <PageHeader title="Platform Support" description="Internal queue for tenant-reported issues." />
+      <PageHeader
+        title="Platform Support"
+        description="Internal queue for tenant-reported issues."
+      />
       <Placeholder
         scope="Level A"
         title="Support tickets from tenants"

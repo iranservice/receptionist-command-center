@@ -29,7 +29,9 @@ export function TopBar({
       {/* Level context strip */}
       <div className={`h-1 w-full ${isPlatform ? "bg-level-a" : "bg-level-b"}`} aria-hidden />
 
-      <div className={`flex h-14 items-center gap-3 px-4 ${isPlatform ? "context-strip-a" : "context-strip-b"}`}>
+      <div
+        className={`flex h-14 items-center gap-3 px-4 ${isPlatform ? "context-strip-a" : "context-strip-b"}`}
+      >
         <SidebarTrigger className="h-8 w-8" />
         <Separator orientation="vertical" className="h-5" />
 
@@ -68,7 +70,12 @@ export function TopBar({
             <HelpCircle className="h-4 w-4" />
           </Button>
 
-          <Button variant="ghost" size="icon" className="relative h-8 w-8" aria-label="Notifications">
+          <Button
+            variant="ghost"
+            size="icon"
+            className="relative h-8 w-8"
+            aria-label="Notifications"
+          >
             <Bell className="h-4 w-4" />
             <span className="absolute right-1.5 top-1.5 h-2 w-2 rounded-full bg-destructive ring-2 ring-background" />
           </Button>

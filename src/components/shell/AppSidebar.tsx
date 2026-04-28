@@ -13,7 +13,14 @@ import {
   SidebarFooter,
   useSidebar,
 } from "@/components/ui/sidebar";
-import { tenantNav, platformNav, groupLabels, demoTenants, roleLabels, type NavItem } from "@/lib/nav-config";
+import {
+  tenantNav,
+  platformNav,
+  groupLabels,
+  demoTenants,
+  roleLabels,
+  type NavItem,
+} from "@/lib/nav-config";
 import { useWorkspace } from "@/lib/workspace";
 import { Building2, ChevronsUpDown, Mic, Sparkles, Check, Plus, ShieldCheck } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
@@ -41,7 +48,9 @@ export function AppSidebar({ variant }: { variant: Variant }) {
   const tenantSlug = params.tenant ?? demoTenants[0].slug;
   const currentTenant = demoTenants.find((t) => t.slug === tenantSlug) ?? demoTenants[0];
 
-  const items = (variant === "platform" ? platformNav : tenantNav).filter((i) => i.roles.includes(role));
+  const items = (variant === "platform" ? platformNav : tenantNav).filter((i) =>
+    i.roles.includes(role),
+  );
 
   const groups = items.reduce<Record<string, NavItem[]>>((acc, item) => {
     (acc[item.group] ??= []).push(item);
@@ -72,7 +81,10 @@ export function AppSidebar({ variant }: { variant: Variant }) {
 
       <SidebarContent className="gap-0">
         {Object.entries(groups).map(([group, groupItems], idx) => (
-          <SidebarGroup key={group} className={idx > 0 ? "border-t border-sidebar-border/60 pt-2" : ""}>
+          <SidebarGroup
+            key={group}
+            className={idx > 0 ? "border-t border-sidebar-border/60 pt-2" : ""}
+          >
             {!collapsed && (
               <SidebarGroupLabel className="px-3 text-[10px] font-semibold uppercase tracking-[0.08em] text-muted-foreground/80">
                 {groupLabels[group as NavItem["group"]]}
@@ -240,7 +252,11 @@ function TenantSwitcher({ collapsed, currentSlug }: { collapsed: boolean; curren
           const isCurrent = t.slug === current.slug;
           return (
             <DropdownMenuItem key={t.slug} asChild className="py-2">
-              <Link to="/app/$tenant" params={{ tenant: t.slug }} className="flex items-center gap-2.5">
+              <Link
+                to="/app/$tenant"
+                params={{ tenant: t.slug }}
+                className="flex items-center gap-2.5"
+              >
                 <div className="flex h-7 w-7 items-center justify-center rounded-md bg-level-b/15 text-[10px] font-semibold text-level-b">
                   {t.name
                     .split(" ")

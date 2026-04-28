@@ -4,7 +4,10 @@ import { PageHeader, Placeholder } from "@/components/shell/PageHeader";
 export const Route = createFileRoute("/platform/plans")({
   component: () => (
     <>
-      <PageHeader title="Plans & Subscriptions" description="Platform pricing, plans, and tenant subscriptions." />
+      <PageHeader
+        title="Plans & Subscriptions"
+        description="Platform pricing, plans, and tenant subscriptions."
+      />
       <Placeholder
         scope="Level A"
         title="Platform billing — Level A only"

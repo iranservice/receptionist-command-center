@@ -4,7 +4,10 @@ import { PageHeader, Placeholder } from "@/components/shell/PageHeader";
 export const Route = createFileRoute("/app/$tenant/approvals")({
   component: () => (
     <>
-      <PageHeader title="Approvals" description="Items waiting on operator or admin sign-off before AI proceeds." />
+      <PageHeader
+        title="Approvals"
+        description="Items waiting on operator or admin sign-off before AI proceeds."
+      />
       <Placeholder
         scope="Level B"
         title="Approval queue"

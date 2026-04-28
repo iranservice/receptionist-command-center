@@ -8,7 +8,13 @@ type WorkspaceCtx = {
 
 const Ctx = createContext<WorkspaceCtx | null>(null);
 
-export function WorkspaceProvider({ children, defaultRole = "business_admin" }: { children: ReactNode; defaultRole?: Role }) {
+export function WorkspaceProvider({
+  children,
+  defaultRole = "business_admin",
+}: {
+  children: ReactNode;
+  defaultRole?: Role;
+}) {
   const [role, setRole] = useState<Role>(defaultRole);
   const value = useMemo(() => ({ role, setRole }), [role]);
   return <Ctx.Provider value={value}>{children}</Ctx.Provider>;

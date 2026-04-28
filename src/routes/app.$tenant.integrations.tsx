@@ -4,7 +4,10 @@ import { PageHeader, Placeholder } from "@/components/shell/PageHeader";
 export const Route = createFileRoute("/app/$tenant/integrations")({
   component: () => (
     <>
-      <PageHeader title="Integrations" description="Tenant-owned channels, payment gateway, and external systems." />
+      <PageHeader
+        title="Integrations"
+        description="Tenant-owned channels, payment gateway, and external systems."
+      />
       <Placeholder
         scope="Level B"
         title="Tenant integrations — Level B only"

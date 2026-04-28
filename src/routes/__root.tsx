@@ -29,18 +29,28 @@ export const Route = createRootRoute({
     meta: [
       { charSet: "utf-8" },
       { name: "viewport", content: "width=device-width, initial-scale=1" },
-      { title: "Lovable App" },
-      { name: "description", content: "An AI receptionist platform for B2B businesses, managing customer interactions and operations." },
-      { name: "author", content: "Lovable" },
-      { property: "og:title", content: "Lovable App" },
-      { property: "og:description", content: "An AI receptionist platform for B2B businesses, managing customer interactions and operations." },
+      { title: "Aura · AI Receptionist" },
+      {
+        name: "description",
+        content:
+          "An AI receptionist platform for B2B businesses, managing customer interactions and operations.",
+      },
+      { name: "author", content: "Aura" },
+      { property: "og:title", content: "Aura · AI Receptionist" },
+      {
+        property: "og:description",
+        content:
+          "An AI receptionist platform for B2B businesses, managing customer interactions and operations.",
+      },
       { property: "og:type", content: "website" },
       { name: "twitter:card", content: "summary" },
-      { name: "twitter:site", content: "@Lovable" },
-      { name: "twitter:title", content: "Lovable App" },
-      { name: "twitter:description", content: "An AI receptionist platform for B2B businesses, managing customer interactions and operations." },
-      { property: "og:image", content: "https://pub-bb2e103a32db4e198524a2e9ed8f35b4.r2.dev/0b7dadff-bc82-4933-b0fe-ecf3a7b6fd41/id-preview-a87619b2--47a6877d-4261-4e0d-8707-2de806daa11b.lovable.app-1777382143769.png" },
-      { name: "twitter:image", content: "https://pub-bb2e103a32db4e198524a2e9ed8f35b4.r2.dev/0b7dadff-bc82-4933-b0fe-ecf3a7b6fd41/id-preview-a87619b2--47a6877d-4261-4e0d-8707-2de806daa11b.lovable.app-1777382143769.png" },
+      { name: "twitter:site", content: "@aura_ops" },
+      { name: "twitter:title", content: "Aura · AI Receptionist" },
+      {
+        name: "twitter:description",
+        content:
+          "An AI receptionist platform for B2B businesses, managing customer interactions and operations.",
+      },
     ],
     links: [
       {

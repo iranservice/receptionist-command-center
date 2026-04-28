@@ -1,5 +1,10 @@
 import { createFileRoute, Link, useParams } from "@tanstack/react-router";
-import { PageHeader, StatCard, SectionHeader, PlaceholderArea } from "@/components/shell/PageHeader";
+import {
+  PageHeader,
+  StatCard,
+  SectionHeader,
+  PlaceholderArea,
+} from "@/components/shell/PageHeader";
 import { Card } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -59,10 +64,41 @@ function TenantDashboard() {
             description="Operational signals across the inbox and order flow."
           />
           <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
-            <StatCard label="Open conversations" value="24" delta="+6" trend="up" icon={Inbox} hint="vs. yesterday" />
-            <StatCard label="AI handling" value="11" delta="46%" trend="flat" icon={Bot} tone="ai" hint="of open" />
-            <StatCard label="Operator handling" value="9" delta="38%" trend="flat" icon={User} tone="operator" hint="of open" />
-            <StatCard label="Needs approval" value="2" delta="urgent" trend="down" icon={ShieldAlert} tone="warn" hint="awaiting sign-off" />
+            <StatCard
+              label="Open conversations"
+              value="24"
+              delta="+6"
+              trend="up"
+              icon={Inbox}
+              hint="vs. yesterday"
+            />
+            <StatCard
+              label="AI handling"
+              value="11"
+              delta="46%"
+              trend="flat"
+              icon={Bot}
+              tone="ai"
+              hint="of open"
+            />
+            <StatCard
+              label="Operator handling"
+              value="9"
+              delta="38%"
+              trend="flat"
+              icon={User}
+              tone="operator"
+              hint="of open"
+            />
+            <StatCard
+              label="Needs approval"
+              value="2"
+              delta="urgent"
+              trend="down"
+              icon={ShieldAlert}
+              tone="warn"
+              hint="awaiting sign-off"
+            />
           </div>
         </section>
 
@@ -80,16 +116,19 @@ function TenantDashboard() {
             </div>
             {/* Lightweight illustrative bars (no chart lib needed) */}
             <div className="mt-5 flex h-32 items-end gap-1.5">
-              {[5, 8, 6, 9, 12, 14, 11, 16, 13, 18, 15, 20, 17, 22, 19, 24, 21, 18, 16, 14, 12, 10, 9, 11].map((v, i) => (
+              {[
+                5, 8, 6, 9, 12, 14, 11, 16, 13, 18, 15, 20, 17, 22, 19, 24, 21, 18, 16, 14, 12, 10,
+                9, 11,
+              ].map((v, i) => (
                 <div key={i} className="flex flex-1 flex-col gap-px">
                   <div
                     className="rounded-sm bg-ai/70"
-                    style={{ height: `${v * 1.4}px`, opacity: 0.5 + (i / 50) }}
+                    style={{ height: `${v * 1.4}px`, opacity: 0.5 + i / 50 }}
                     aria-hidden
                   />
                   <div
                     className="rounded-sm bg-operator/70"
-                    style={{ height: `${(v / 1.7) + 4}px`, opacity: 0.6 }}
+                    style={{ height: `${v / 1.7 + 4}px`, opacity: 0.6 }}
                     aria-hidden
                   />
                 </div>
@@ -102,7 +141,9 @@ function TenantDashboard() {
               <div className="flex items-center gap-1.5">
                 <span className="h-2 w-2 rounded-sm bg-operator/70" /> Operator replies
               </div>
-              <span className="ml-auto text-muted-foreground">Illustrative · backend-driven later</span>
+              <span className="ml-auto text-muted-foreground">
+                Illustrative · backend-driven later
+              </span>
             </div>
           </Card>
 
@@ -182,17 +223,13 @@ function TenantDashboard() {
               icon={ShieldAlert}
               scope="Level B"
               title="Approvals"
-              notes={[
-                "Approval-required vs confirmation-required clearly separated.",
-              ]}
+              notes={["Approval-required vs confirmation-required clearly separated."]}
             />
             <PlaceholderArea
               icon={Mic}
               scope="Level B"
               title="Voice channel · reserved"
-              notes={[
-                "Navigation slot reserved so voice can be added without redesign.",
-              ]}
+              notes={["Navigation slot reserved so voice can be added without redesign."]}
             />
           </div>
         </section>
