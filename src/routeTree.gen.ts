@@ -11,6 +11,15 @@
 import { Route as rootRouteImport } from './routes/__root'
 import { Route as PlatformRouteImport } from './routes/platform'
 import { Route as IndexRouteImport } from './routes/index'
+import { Route as PlatformIndexRouteImport } from './routes/platform.index'
+import { Route as PlatformTenantsRouteImport } from './routes/platform.tenants'
+import { Route as PlatformSystemRouteImport } from './routes/platform.system'
+import { Route as PlatformSupportRouteImport } from './routes/platform.support'
+import { Route as PlatformSettingsRouteImport } from './routes/platform.settings'
+import { Route as PlatformSalesRouteImport } from './routes/platform.sales'
+import { Route as PlatformPlansRouteImport } from './routes/platform.plans'
+import { Route as PlatformMembersRouteImport } from './routes/platform.members'
+import { Route as PlatformAnalyticsRouteImport } from './routes/platform.analytics'
 import { Route as AppTenantRouteImport } from './routes/app.$tenant'
 
 const PlatformRoute = PlatformRouteImport.update({
@@ -23,6 +32,51 @@ const IndexRoute = IndexRouteImport.update({
   path: '/',
   getParentRoute: () => rootRouteImport,
 } as any)
+const PlatformIndexRoute = PlatformIndexRouteImport.update({
+  id: '/',
+  path: '/',
+  getParentRoute: () => PlatformRoute,
+} as any)
+const PlatformTenantsRoute = PlatformTenantsRouteImport.update({
+  id: '/tenants',
+  path: '/tenants',
+  getParentRoute: () => PlatformRoute,
+} as any)
+const PlatformSystemRoute = PlatformSystemRouteImport.update({
+  id: '/system',
+  path: '/system',
+  getParentRoute: () => PlatformRoute,
+} as any)
+const PlatformSupportRoute = PlatformSupportRouteImport.update({
+  id: '/support',
+  path: '/support',
+  getParentRoute: () => PlatformRoute,
+} as any)
+const PlatformSettingsRoute = PlatformSettingsRouteImport.update({
+  id: '/settings',
+  path: '/settings',
+  getParentRoute: () => PlatformRoute,
+} as any)
+const PlatformSalesRoute = PlatformSalesRouteImport.update({
+  id: '/sales',
+  path: '/sales',
+  getParentRoute: () => PlatformRoute,
+} as any)
+const PlatformPlansRoute = PlatformPlansRouteImport.update({
+  id: '/plans',
+  path: '/plans',
+  getParentRoute: () => PlatformRoute,
+} as any)
+const PlatformMembersRoute = PlatformMembersRouteImport.update({
+  id: '/members',
+  path: '/members',
+  getParentRoute: () => PlatformRoute,
+} as any)
+const PlatformAnalyticsRoute = PlatformAnalyticsRouteImport.update({
+  id: '/analytics',
+  path: '/analytics',
+  getParentRoute: () => PlatformRoute,
+} as any)
 const AppTenantRoute = AppTenantRouteImport.update({
   id: '/app/$tenant',
   path: '/app/$tenant',
@@ -31,31 +85,93 @@ const AppTenantRoute = AppTenantRouteImport.update({
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
-  '/platform': typeof PlatformRoute
+  '/platform': typeof PlatformRouteWithChildren
   '/app/$tenant': typeof AppTenantRoute
+  '/platform/analytics': typeof PlatformAnalyticsRoute
+  '/platform/members': typeof PlatformMembersRoute
+  '/platform/plans': typeof PlatformPlansRoute
+  '/platform/sales': typeof PlatformSalesRoute
+  '/platform/settings': typeof PlatformSettingsRoute
+  '/platform/support': typeof PlatformSupportRoute
+  '/platform/system': typeof PlatformSystemRoute
+  '/platform/tenants': typeof PlatformTenantsRoute
+  '/platform/': typeof PlatformIndexRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
-  '/platform': typeof PlatformRoute
   '/app/$tenant': typeof AppTenantRoute
+  '/platform/analytics': typeof PlatformAnalyticsRoute
+  '/platform/members': typeof PlatformMembersRoute
+  '/platform/plans': typeof PlatformPlansRoute
+  '/platform/sales': typeof PlatformSalesRoute
+  '/platform/settings': typeof PlatformSettingsRoute
+  '/platform/support': typeof PlatformSupportRoute
+  '/platform/system': typeof PlatformSystemRoute
+  '/platform/tenants': typeof PlatformTenantsRoute
+  '/platform': typeof PlatformIndexRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
   '/': typeof IndexRoute
-  '/platform': typeof PlatformRoute
+  '/platform': typeof PlatformRouteWithChildren
   '/app/$tenant': typeof AppTenantRoute
+  '/platform/analytics': typeof PlatformAnalyticsRoute
+  '/platform/members': typeof PlatformMembersRoute
+  '/platform/plans': typeof PlatformPlansRoute
+  '/platform/sales': typeof PlatformSalesRoute
+  '/platform/settings': typeof PlatformSettingsRoute
+  '/platform/support': typeof PlatformSupportRoute
+  '/platform/system': typeof PlatformSystemRoute
+  '/platform/tenants': typeof PlatformTenantsRoute
+  '/platform/': typeof PlatformIndexRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
-  fullPaths: '/' | '/platform' | '/app/$tenant'
+  fullPaths:
+    | '/'
+    | '/platform'
+    | '/app/$tenant'
+    | '/platform/analytics'
+    | '/platform/members'
+    | '/platform/plans'
+    | '/platform/sales'
+    | '/platform/settings'
+    | '/platform/support'
+    | '/platform/system'
+    | '/platform/tenants'
+    | '/platform/'
   fileRoutesByTo: FileRoutesByTo
-  to: '/' | '/platform' | '/app/$tenant'
-  id: '__root__' | '/' | '/platform' | '/app/$tenant'
+  to:
+    | '/'
+    | '/app/$tenant'
+    | '/platform/analytics'
+    | '/platform/members'
+    | '/platform/plans'
+    | '/platform/sales'
+    | '/platform/settings'
+    | '/platform/support'
+    | '/platform/system'
+    | '/platform/tenants'
+    | '/platform'
+  id:
+    | '__root__'
+    | '/'
+    | '/platform'
+    | '/app/$tenant'
+    | '/platform/analytics'
+    | '/platform/members'
+    | '/platform/plans'
+    | '/platform/sales'
+    | '/platform/settings'
+    | '/platform/support'
+    | '/platform/system'
+    | '/platform/tenants'
+    | '/platform/'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
-  PlatformRoute: typeof PlatformRoute
+  PlatformRoute: typeof PlatformRouteWithChildren
   AppTenantRoute: typeof AppTenantRoute
 }
 
@@ -75,6 +191,69 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof IndexRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/platform/': {
+      id: '/platform/'
+      path: '/'
+      fullPath: '/platform/'
+      preLoaderRoute: typeof PlatformIndexRouteImport
+      parentRoute: typeof PlatformRoute
+    }
+    '/platform/tenants': {
+      id: '/platform/tenants'
+      path: '/tenants'
+      fullPath: '/platform/tenants'
+      preLoaderRoute: typeof PlatformTenantsRouteImport
+      parentRoute: typeof PlatformRoute
+    }
+    '/platform/system': {
+      id: '/platform/system'
+      path: '/system'
+      fullPath: '/platform/system'
+      preLoaderRoute: typeof PlatformSystemRouteImport
+      parentRoute: typeof PlatformRoute
+    }
+    '/platform/support': {
+      id: '/platform/support'
+      path: '/support'
+      fullPath: '/platform/support'
+      preLoaderRoute: typeof PlatformSupportRouteImport
+      parentRoute: typeof PlatformRoute
+    }
+    '/platform/settings': {
+      id: '/platform/settings'
+      path: '/settings'
+      fullPath: '/platform/settings'
+      preLoaderRoute: typeof PlatformSettingsRouteImport
+      parentRoute: typeof PlatformRoute
+    }
+    '/platform/sales': {
+      id: '/platform/sales'
+      path: '/sales'
+      fullPath: '/platform/sales'
+      preLoaderRoute: typeof PlatformSalesRouteImport
+      parentRoute: typeof PlatformRoute
+    }
+    '/platform/plans': {
+      id: '/platform/plans'
+      path: '/plans'
+      fullPath: '/platform/plans'
+      preLoaderRoute: typeof PlatformPlansRouteImport
+      parentRoute: typeof PlatformRoute
+    }
+    '/platform/members': {
+      id: '/platform/members'
+      path: '/members'
+      fullPath: '/platform/members'
+      preLoaderRoute: typeof PlatformMembersRouteImport
+      parentRoute: typeof PlatformRoute
+    }
+    '/platform/analytics': {
+      id: '/platform/analytics'
+      path: '/analytics'
+      fullPath: '/platform/analytics'
+      preLoaderRoute: typeof PlatformAnalyticsRouteImport
+      parentRoute: typeof PlatformRoute
+    }
     '/app/$tenant': {
       id: '/app/$tenant'
       path: '/app/$tenant'
@@ -85,9 +264,37 @@ declare module '@tanstack/react-router' {
   }
 }
 
+interface PlatformRouteChildren {
+  PlatformAnalyticsRoute: typeof PlatformAnalyticsRoute
+  PlatformMembersRoute: typeof PlatformMembersRoute
+  PlatformPlansRoute: typeof PlatformPlansRoute
+  PlatformSalesRoute: typeof PlatformSalesRoute
+  PlatformSettingsRoute: typeof PlatformSettingsRoute
+  PlatformSupportRoute: typeof PlatformSupportRoute
+  PlatformSystemRoute: typeof PlatformSystemRoute
+  PlatformTenantsRoute: typeof PlatformTenantsRoute
+  PlatformIndexRoute: typeof PlatformIndexRoute
+}
+
+const PlatformRouteChildren: PlatformRouteChildren = {
+  PlatformAnalyticsRoute: PlatformAnalyticsRoute,
+  PlatformMembersRoute: PlatformMembersRoute,
+  PlatformPlansRoute: PlatformPlansRoute,
+  PlatformSalesRoute: PlatformSalesRoute,
+  PlatformSettingsRoute: PlatformSettingsRoute,
+  PlatformSupportRoute: PlatformSupportRoute,
+  PlatformSystemRoute: PlatformSystemRoute,
+  PlatformTenantsRoute: PlatformTenantsRoute,
+  PlatformIndexRoute: PlatformIndexRoute,
+}
+
+const PlatformRouteWithChildren = PlatformRoute._addFileChildren(
+  PlatformRouteChildren,
+)
+
 const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
-  PlatformRoute: PlatformRoute,
+  PlatformRoute: PlatformRouteWithChildren,
   AppTenantRoute: AppTenantRoute,
 }
 export const routeTree = rootRouteImport
