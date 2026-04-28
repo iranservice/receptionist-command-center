@@ -1,3 +1,4 @@
+import type { ComponentProps } from "react";
 import { createFileRoute, Link, useParams } from "@tanstack/react-router";
 import {
   PageHeader,
@@ -8,6 +9,7 @@ import {
 import { Card } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
+import { OpStateBadge } from "@/components/state/OpStateBadge";
 import {
   Inbox,
   Bot,
@@ -20,6 +22,10 @@ import {
   Activity,
   Plug,
   BarChart3,
+  CircleAlert,
+  CheckCircle2,
+  ShieldCheck,
+  ArrowRightLeft,
 } from "lucide-react";
 import { demoTenants } from "@/lib/nav-config";
 
@@ -184,6 +190,88 @@ function TenantDashboard() {
           </Card>
         </section>
 
+        {/* LV-5: Approvals vs Customer confirmations — visually distinct */}
+        <section className="grid gap-4 lg:grid-cols-2">
+          <Card className="p-5 shadow-xs">
+            <div className="flex items-start justify-between">
+              <div className="flex items-start gap-2">
+                <span className="flex h-7 w-7 items-center justify-center rounded-md bg-warn/25 text-warn-foreground">
+                  <ShieldAlert className="h-3.5 w-3.5" />
+                </span>
+                <div>
+                  <h3 className="font-display text-sm font-semibold">Internal approvals</h3>
+                  <p className="text-xs text-muted-foreground">
+                    Sensitive actions awaiting an authorized human.
+                  </p>
+                </div>
+              </div>
+              <Button asChild variant="ghost" size="sm" className="gap-1 text-primary">
+                <Link to="/app/$tenant/approvals" params={{ tenant: t.slug }}>
+                  Open <ArrowRight className="h-3.5 w-3.5" />
+                </Link>
+              </Button>
+            </div>
+            <div className="mt-4 grid grid-cols-3 gap-2">
+              <MiniStat label="Pending" value="5" state="pending" />
+              <MiniStat label="Approved · 7d" value="22" state="approved" />
+              <MiniStat label="Rejected · 7d" value="6" state="rejected" />
+            </div>
+          </Card>
+
+          <Card className="p-5 shadow-xs">
+            <div className="flex items-start justify-between">
+              <div className="flex items-start gap-2">
+                <span className="flex h-7 w-7 items-center justify-center rounded-md bg-ai/12 text-ai">
+                  <CircleAlert className="h-3.5 w-3.5" />
+                </span>
+                <div>
+                  <h3 className="font-display text-sm font-semibold">Customer confirmations</h3>
+                  <p className="text-xs text-muted-foreground">
+                    Awaiting reply from the customer — lives on the order.
+                  </p>
+                </div>
+              </div>
+              <Button asChild variant="ghost" size="sm" className="gap-1 text-primary">
+                <Link to="/app/$tenant/inbox" params={{ tenant: t.slug }}>
+                  Inbox <ArrowRight className="h-3.5 w-3.5" />
+                </Link>
+              </Button>
+            </div>
+            <div className="mt-4 grid grid-cols-3 gap-2">
+              <MiniStat label="Awaiting" value="9" state="customer_confirmation_pending" />
+              <MiniStat label="Confirmed today" value="34" state="approved" />
+              <MiniStat label="Declined · 7d" value="2" state="rejected" />
+            </div>
+          </Card>
+        </section>
+
+        {/* Today snapshot */}
+        <section className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
+          <StatCard label="Orders today" value="42" delta="+6" trend="up" icon={ShoppingBag} />
+          <StatCard
+            label="Confirmed today"
+            value="34"
+            delta="81%"
+            trend="up"
+            icon={CheckCircle2}
+            tone="success"
+          />
+          <StatCard
+            label="Handoffs today"
+            value="7"
+            delta="-2"
+            trend="down"
+            icon={ArrowRightLeft}
+            tone="warn"
+          />
+          <StatCard
+            label="Approvals · all-time"
+            value="184"
+            icon={ShieldCheck}
+            hint="audit retained by backend"
+          />
+        </section>
+
         {/* Future areas */}
         <section>
           <SectionHeader
@@ -235,5 +323,29 @@ function TenantDashboard() {
         </section>
       </div>
     </>
+  );
+}
+
+function MiniStat({
+  label,
+  value,
+  state,
+}: {
+  label: string;
+  value: string;
+  state: ComponentProps<typeof OpStateBadge>["state"];
+}) {
+  return (
+    <div className="rounded-md border px-3 py-2">
+      <div className="flex items-center justify-between">
+        <span className="text-[10px] font-medium uppercase tracking-wider text-muted-foreground">
+          {label}
+        </span>
+      </div>
+      <div className="mt-0.5 flex items-baseline justify-between gap-2">
+        <span className="font-display text-xl font-semibold tabular-nums">{value}</span>
+        <OpStateBadge state={state} size="xs" />
+      </div>
+    </div>
   );
 }

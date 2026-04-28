@@ -143,6 +143,7 @@ function PlatformDashboard() {
             <ul className="mt-4 space-y-3 text-sm">
               {[
                 { label: "Tenant onboarding", count: 3, to: "/platform/tenants" as const },
+                { label: "Platform approvals", count: 2, to: "/platform" as const },
                 { label: "Open support", count: 6, to: "/platform/support" as const },
                 { label: "Billing review", count: 1, to: "/platform/plans" as const },
                 { label: "Sales replies", count: 4, to: "/platform/sales" as const },
