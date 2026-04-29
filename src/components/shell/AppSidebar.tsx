@@ -1,5 +1,5 @@
 import { Link, useRouterState, useParams } from "@tanstack/react-router";
-import { useState } from "react";
+import { useState, useMemo } from "react";
 import {
   Sidebar,
   SidebarContent,
@@ -22,6 +22,7 @@ import {
   type NavItem,
 } from "@/lib/nav-config";
 import { useWorkspace } from "@/lib/workspace";
+import { useAuth } from "@/lib/auth";
 import { Building2, ChevronsUpDown, Mic, Sparkles, Check, Plus, ShieldCheck } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import {
@@ -43,10 +44,28 @@ export function AppSidebar({ variant }: { variant: Variant }) {
   const { state } = useSidebar();
   const collapsed = state === "collapsed";
   const { role } = useWorkspace();
+  const { memberships, isDemoMode, profile } = useAuth();
   const pathname = useRouterState({ select: (s) => s.location.pathname });
   const params = useParams({ strict: false }) as { tenant?: string };
   const tenantSlug = params.tenant ?? demoTenants[0].slug;
-  const currentTenant = demoTenants.find((t) => t.slug === tenantSlug) ?? demoTenants[0];
+
+  // Derive tenant list from auth memberships, fallback to demo data
+  const tenantList = useMemo(() => {
+    if (memberships.length > 0) {
+      return memberships.map((m) => ({
+        slug: m.businessSlug,
+        name: m.businessName,
+        type: m.businessType,
+      }));
+    }
+    return demoTenants;
+  }, [memberships]);
+
+  const currentTenant = tenantList.find((t) => t.slug === tenantSlug) ?? tenantList[0];
+  const showPlatformLink =
+    isDemoMode ||
+    profile?.platformRole === "super_admin" ||
+    profile?.platformRole === "platform_admin";
 
   const items = (variant === "platform" ? platformNav : tenantNav).filter((i) =>
     i.roles.includes(role),
@@ -75,7 +94,12 @@ export function AppSidebar({ variant }: { variant: Variant }) {
         {variant === "platform" ? (
           <PlatformBrand collapsed={collapsed} />
         ) : (
-          <TenantSwitcher collapsed={collapsed} currentSlug={currentTenant.slug} />
+          <TenantSwitcher
+            collapsed={collapsed}
+            currentSlug={currentTenant?.slug ?? tenantSlug}
+            tenants={tenantList}
+            showPlatformLink={showPlatformLink}
+          />
         )}
       </SidebarHeader>
 
@@ -204,20 +228,32 @@ function PlatformBrand({ collapsed }: { collapsed: boolean }) {
   );
 }
 
-function TenantSwitcher({ collapsed, currentSlug }: { collapsed: boolean; currentSlug: string }) {
+function TenantSwitcher({
+  collapsed,
+  currentSlug,
+  tenants,
+  showPlatformLink,
+}: {
+  collapsed: boolean;
+  currentSlug: string;
+  tenants: { slug: string; name: string; type: string }[];
+  showPlatformLink: boolean;
+}) {
   const [open, setOpen] = useState(false);
-  const current = demoTenants.find((t) => t.slug === currentSlug) ?? demoTenants[0];
-  const initials = current.name
-    .split(" ")
-    .map((s) => s[0])
-    .slice(0, 2)
-    .join("");
+  const current = tenants.find((t) => t.slug === currentSlug) ?? tenants[0];
+  const initials = current
+    ? current.name
+        .split(" ")
+        .map((s) => s[0])
+        .slice(0, 2)
+        .join("")
+    : "?";
 
   if (collapsed) {
     return (
       <Link
         to="/app/$tenant"
-        params={{ tenant: current.slug }}
+        params={{ tenant: current?.slug ?? currentSlug }}
         className="flex justify-center rounded-md px-1 py-1.5 hover:bg-sidebar-accent"
       >
         <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-level-b font-semibold text-[11px] text-level-b-foreground shadow-sm">
@@ -236,9 +272,9 @@ function TenantSwitcher({ collapsed, currentSlug }: { collapsed: boolean; curren
             <span className="absolute -bottom-0.5 -right-0.5 h-2 w-2 rounded-full bg-success ring-2 ring-sidebar" />
           </div>
           <div className="flex min-w-0 flex-col leading-tight">
-            <span className="truncate text-sm font-semibold">{current.name}</span>
+            <span className="truncate text-sm font-semibold">{current?.name ?? currentSlug}</span>
             <span className="truncate text-[10px] uppercase tracking-[0.08em] text-muted-foreground">
-              Level B · {current.type}
+              Level B · {current?.type ?? "Workspace"}
             </span>
           </div>
           <ChevronsUpDown className="ml-auto h-4 w-4 shrink-0 text-muted-foreground transition-transform group-hover:text-foreground" />
@@ -248,8 +284,8 @@ function TenantSwitcher({ collapsed, currentSlug }: { collapsed: boolean; curren
         <DropdownMenuLabel className="text-[10px] font-semibold uppercase tracking-wider text-muted-foreground">
           Workspaces
         </DropdownMenuLabel>
-        {demoTenants.map((t) => {
-          const isCurrent = t.slug === current.slug;
+        {tenants.map((t) => {
+          const isCurrent = t.slug === current?.slug;
           return (
             <DropdownMenuItem key={t.slug} asChild className="py-2">
               <Link
@@ -278,20 +314,24 @@ function TenantSwitcher({ collapsed, currentSlug }: { collapsed: boolean; curren
         <DropdownMenuItem className="py-2 text-muted-foreground">
           <Plus className="mr-2 h-4 w-4" /> Add business
         </DropdownMenuItem>
-        <DropdownMenuSeparator />
-        <DropdownMenuItem asChild className="py-2">
-          <Link to="/platform" className="flex items-center gap-2.5">
-            <div className="flex h-7 w-7 items-center justify-center rounded-md bg-level-a/15 text-level-a">
-              <Sparkles className="h-3.5 w-3.5" />
-            </div>
-            <div className="flex flex-col leading-tight">
-              <span className="text-sm font-medium">Aura Platform</span>
-              <span className="text-[10px] uppercase tracking-wider text-muted-foreground">
-                Level A · Super Admin
-              </span>
-            </div>
-          </Link>
-        </DropdownMenuItem>
+        {showPlatformLink && (
+          <>
+            <DropdownMenuSeparator />
+            <DropdownMenuItem asChild className="py-2">
+              <Link to="/platform" className="flex items-center gap-2.5">
+                <div className="flex h-7 w-7 items-center justify-center rounded-md bg-level-a/15 text-level-a">
+                  <Sparkles className="h-3.5 w-3.5" />
+                </div>
+                <div className="flex flex-col leading-tight">
+                  <span className="text-sm font-medium">Aura Platform</span>
+                  <span className="text-[10px] uppercase tracking-wider text-muted-foreground">
+                    Level A · Super Admin
+                  </span>
+                </div>
+              </Link>
+            </DropdownMenuItem>
+          </>
+        )}
       </DropdownMenuContent>
     </DropdownMenu>
   );

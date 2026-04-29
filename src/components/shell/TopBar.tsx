@@ -4,6 +4,7 @@ import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Bell, Search, Shield, Building2, Settings, HelpCircle, ChevronDown } from "lucide-react";
 import { useWorkspace } from "@/lib/workspace";
+import { useAuth } from "@/lib/auth";
 import { roleLabels, type Role } from "@/lib/nav-config";
 import {
   DropdownMenu,
@@ -21,7 +22,17 @@ export function TopBar({
   variant: "platform" | "tenant";
   breadcrumb?: React.ReactNode;
 }) {
-  const { role, setRole } = useWorkspace();
+  const { role } = useWorkspace();
+  const { profile, isDemoMode } = useAuth();
+  const displayName = profile?.displayName ?? "User";
+  const displayEmail = profile?.email ?? "";
+  const initials =
+    displayName
+      .split(" ")
+      .map((s) => s[0])
+      .slice(0, 2)
+      .join("")
+      .toUpperCase() || "U";
   const isPlatform = variant === "platform";
 
   return (
@@ -107,10 +118,10 @@ export function TopBar({
             <DropdownMenuTrigger asChild>
               <button className="flex h-8 items-center gap-2 rounded-md border bg-card px-2 shadow-xs transition-colors hover:bg-accent">
                 <div className="flex h-6 w-6 items-center justify-center rounded-full bg-primary/12 text-[10px] font-semibold text-primary">
-                  AM
+                  {initials}
                 </div>
                 <div className="hidden flex-col items-start leading-tight md:flex">
-                  <span className="text-xs font-medium">Alex Morgan</span>
+                  <span className="text-xs font-medium">{displayName}</span>
                   <span className="text-[10px] text-muted-foreground">{roleLabels[role]}</span>
                 </div>
                 <ChevronDown className="h-3.5 w-3.5 text-muted-foreground" />
@@ -118,19 +129,25 @@ export function TopBar({
             </DropdownMenuTrigger>
             <DropdownMenuContent align="end" className="w-60">
               <DropdownMenuLabel className="flex flex-col gap-0.5">
-                <span className="text-sm">Alex Morgan</span>
-                <span className="text-[11px] font-normal text-muted-foreground">alex@aura.ops</span>
+                <span className="text-sm">{displayName}</span>
+                <span className="text-[11px] font-normal text-muted-foreground">
+                  {displayEmail}
+                </span>
               </DropdownMenuLabel>
               <DropdownMenuSeparator />
-              <DropdownMenuLabel className="text-[10px] font-semibold uppercase tracking-wider text-muted-foreground">
-                Demo role · UI hint only
-              </DropdownMenuLabel>
-              {(["super_admin", "business_admin", "operator"] as Role[]).map((r) => (
-                <DropdownMenuItem key={r} onClick={() => setRole(r)} className="justify-between">
-                  <span>{roleLabels[r]}</span>
-                  {role === r && <span className="h-1.5 w-1.5 rounded-full bg-primary" />}
-                </DropdownMenuItem>
-              ))}
+              {isDemoMode && (
+                <>
+                  <DropdownMenuLabel className="text-[10px] font-semibold uppercase tracking-wider text-muted-foreground">
+                    Demo role · UI hint only
+                  </DropdownMenuLabel>
+                  {(["super_admin", "business_admin", "operator"] as Role[]).map((r) => (
+                    <DropdownMenuItem key={r} className="justify-between">
+                      <span>{roleLabels[r]}</span>
+                      {role === r && <span className="h-1.5 w-1.5 rounded-full bg-primary" />}
+                    </DropdownMenuItem>
+                  ))}
+                </>
+              )}
               <DropdownMenuSeparator />
               <DropdownMenuItem className="text-muted-foreground">
                 Account settings

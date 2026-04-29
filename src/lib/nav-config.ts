@@ -19,7 +19,8 @@ import {
   type LucideIcon,
 } from "lucide-react";
 
-export type Role = "super_admin" | "business_admin" | "operator";
+import type { Role } from "@/lib/workspace";
+export type { Role };
 
 export type NavItem = {
   label: string;
