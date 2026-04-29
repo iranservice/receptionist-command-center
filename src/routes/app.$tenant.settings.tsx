@@ -1,5 +1,10 @@
+// Phase II-B — Tenant Settings wired to backend RPCs.
+// Loads business profile from get_business_profile().
+// Saves via update_business_profile().
+// Falls back to demo data when Supabase is not configured.
+
 import { createFileRoute, Link, useParams } from "@tanstack/react-router";
-import { useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 import { PageHeader } from "@/components/shell/PageHeader";
 import { SettingsSection, SettingsField, BackendNote } from "@/components/settings/SettingsLayout";
 import { Card } from "@/components/ui/card";
@@ -26,9 +31,20 @@ import {
   Save,
   Rocket,
   AlertTriangle,
+  Loader2,
 } from "lucide-react";
 import { demoTenants } from "@/lib/nav-config";
 import { businessTypes, getBusinessType, type BusinessTypeId } from "@/lib/business-types";
+import { useAuth } from "@/lib/auth";
+import { useWorkspace } from "@/lib/workspace";
+import {
+  fetchBusinessProfile,
+  updateBusinessProfile,
+  type BusinessProfileRow,
+} from "@/lib/api/business-settings";
+import { classifyError } from "@/lib/api/client";
+import { LoadingState, ErrorState, DeniedState } from "@/components/state/UIState";
+import { toast } from "sonner";
 
 export const Route = createFileRoute("/app/$tenant/settings")({
   head: () => ({ meta: [{ title: "Settings · Workspace" }] }),
@@ -48,38 +64,207 @@ type TabId = (typeof tabs)[number]["id"];
 
 function TenantSettings() {
   const { tenant } = useParams({ from: "/app/$tenant/settings" });
+  const { isDemoMode } = useAuth();
+  const { businessId, role } = useWorkspace();
   const t = demoTenants.find((x) => x.slug === tenant) ?? demoTenants[0];
+
   const [active, setActive] = useState<TabId>("profile");
   const [businessType, setBusinessType] = useState<BusinessTypeId>("restaurant");
+
+  // ── Backend data state ──────────────────────────────────
+  const [profile, setProfile] = useState<BusinessProfileRow | null>(null);
+  const [loading, setLoading] = useState(!isDemoMode);
+  const [error, setError] = useState<string | null>(null);
+  const [saving, setSaving] = useState(false);
+
+  // ── Form state (initialized from profile) ──────────────
+  const [formName, setFormName] = useState("");
+  const [formPhone, setFormPhone] = useState("");
+  const [formEmail, setFormEmail] = useState("");
+  const [formTimezone, setFormTimezone] = useState("auto");
+  const [formLanguage, setFormLanguage] = useState("en");
+  const [formAddress, setFormAddress] = useState("");
+
+  // ── Load profile ───────────────────────────────────────
+  const loadProfile = useCallback(async () => {
+    if (isDemoMode || !businessId) return;
+    setLoading(true);
+    setError(null);
+
+    const result = await fetchBusinessProfile(businessId);
+    if (result.error) {
+      const cat = classifyError(result.error);
+      if (cat === "access_denied") {
+        setError("ACCESS_DENIED");
+      } else {
+        setError(result.error);
+      }
+      setLoading(false);
+      return;
+    }
+
+    const rows = result.data;
+    if (rows && rows.length > 0) {
+      const p = rows[0];
+      setProfile(p);
+      // Initialize form state from loaded profile
+      setFormName(p.name ?? "");
+      setFormPhone(p.phone ?? "");
+      setFormEmail(p.email ?? "");
+      setFormTimezone(p.timezone ?? "auto");
+      setFormLanguage(p.default_language ?? "en");
+      setFormAddress((p.business_config?.address as string) ?? "");
+      if (p.business_type) {
+        const knownType = businessTypes.find((bt) => bt.id === p.business_type);
+        if (knownType) setBusinessType(knownType.id);
+      }
+    }
+    setLoading(false);
+  }, [isDemoMode, businessId]);
+
+  useEffect(() => {
+    loadProfile();
+  }, [loadProfile]);
+
+  // ── Save handler ───────────────────────────────────────
+  const handleSave = useCallback(async () => {
+    if (isDemoMode) {
+      toast.success("Demo mode — changes are not persisted.");
+      return;
+    }
+    if (!businessId) return;
+
+    setSaving(true);
+    const result = await updateBusinessProfile({
+      p_business_id: businessId,
+      p_name: formName || undefined,
+      p_phone: formPhone || undefined,
+      p_email: formEmail || undefined,
+      p_timezone: formTimezone !== "auto" ? formTimezone : undefined,
+      p_default_language: formLanguage || undefined,
+      p_business_config: formAddress ? { address: formAddress } : undefined,
+    });
+
+    setSaving(false);
+
+    if (result.error) {
+      const cat = classifyError(result.error);
+      if (cat === "access_denied") {
+        toast.error("Permission denied. Only owners and managers can update settings.");
+      } else {
+        toast.error(`Failed to save: ${result.error}`);
+      }
+      return;
+    }
+
+    toast.success("Settings saved successfully.");
+    // Reload profile to get fresh data
+    loadProfile();
+  }, [
+    isDemoMode,
+    businessId,
+    formName,
+    formPhone,
+    formEmail,
+    formTimezone,
+    formLanguage,
+    formAddress,
+    loadProfile,
+  ]);
+
+  // ── Access denied ──────────────────────────────────────
+  if (error === "ACCESS_DENIED") {
+    return (
+      <>
+        <PageHeader title="Settings" description="Workspace settings" />
+        <div className="p-6">
+          <DeniedState
+            title="Access denied"
+            description="You don't have permission to view business settings. Contact a workspace admin."
+          />
+        </div>
+      </>
+    );
+  }
+
+  // ── Loading ────────────────────────────────────────────
+  if (loading) {
+    return (
+      <>
+        <PageHeader title="Settings" description="Loading workspace settings…" />
+        <div className="p-6">
+          <LoadingState
+            title="Loading settings…"
+            description="Fetching business profile from backend."
+          />
+        </div>
+      </>
+    );
+  }
+
+  // ── Error ──────────────────────────────────────────────
+  if (error) {
+    return (
+      <>
+        <PageHeader title="Settings" description="Workspace settings" />
+        <div className="p-6">
+          <ErrorState title="Failed to load settings" description={error} onRetry={loadProfile} />
+        </div>
+      </>
+    );
+  }
+
+  // ── Derive display values ─────────────────────────────
+  const displayName = profile?.name ?? t.name;
   const bt = getBusinessType(businessType);
+  const isAdmin = role === "business_admin" || role === "super_admin";
 
   return (
     <>
       <PageHeader
         title="Settings"
-        description="Workspace settings for this tenant business. Frontend collects intent — backend is the source of truth."
+        description={
+          isDemoMode
+            ? "Demo mode — Settings shown with sample data. Connect Supabase to persist."
+            : "Workspace settings for this tenant business. Backend is the source of truth."
+        }
         meta={
           <>
             <Badge
               variant="secondary"
               className="h-5 border-0 bg-level-b/12 px-1.5 text-[10px] font-medium text-level-b"
             >
-              Level B · {t.name}
+              Level B · {displayName}
             </Badge>
             <Badge variant="outline" className="font-normal">
               {bt.label}
             </Badge>
+            {isDemoMode && (
+              <Badge variant="outline" className="border-warn/40 text-warn-foreground">
+                Demo
+              </Badge>
+            )}
           </>
         }
         actions={
           <>
             <Button asChild size="sm" variant="outline" className="gap-1.5">
-              <Link to="/app/$tenant/setup" params={{ tenant: t.slug }}>
+              <Link to="/app/$tenant/setup" params={{ tenant }}>
                 <Rocket className="h-3.5 w-3.5" /> Re-run setup
               </Link>
             </Button>
-            <Button size="sm" className="gap-1.5">
-              <Save className="h-3.5 w-3.5" /> Save changes
+            <Button
+              size="sm"
+              className="gap-1.5"
+              onClick={handleSave}
+              disabled={saving || !isAdmin}
+            >
+              {saving ? (
+                <Loader2 className="h-3.5 w-3.5 animate-spin" />
+              ) : (
+                <Save className="h-3.5 w-3.5" />
+              )}
+              {saving ? "Saving…" : "Save changes"}
             </Button>
           </>
         }
@@ -114,11 +299,31 @@ function TenantSettings() {
         </aside>
 
         <div className="min-w-0 space-y-5">
-          {active === "profile" && <ProfileTab tenantName={t.name} />}
+          {active === "profile" && (
+            <ProfileTab
+              name={formName}
+              phone={formPhone}
+              email={formEmail}
+              address={formAddress}
+              onNameChange={setFormName}
+              onPhoneChange={setFormPhone}
+              onEmailChange={setFormEmail}
+              onAddressChange={setFormAddress}
+              readOnly={!isAdmin}
+            />
+          )}
           {active === "hours" && <HoursTab />}
           {active === "service" && <ServiceTab />}
           {active === "ai" && <AITab />}
-          {active === "localization" && <LocalizationTab />}
+          {active === "localization" && (
+            <LocalizationTab
+              language={formLanguage}
+              timezone={formTimezone}
+              onLanguageChange={setFormLanguage}
+              onTimezoneChange={setFormTimezone}
+              readOnly={!isAdmin}
+            />
+          )}
           {active === "module" && <ModuleTab value={businessType} onChange={setBusinessType} />}
         </div>
       </div>
@@ -126,7 +331,27 @@ function TenantSettings() {
   );
 }
 
-function ProfileTab({ tenantName }: { tenantName: string }) {
+function ProfileTab({
+  name,
+  phone,
+  email,
+  address,
+  onNameChange,
+  onPhoneChange,
+  onEmailChange,
+  onAddressChange,
+  readOnly,
+}: {
+  name: string;
+  phone: string;
+  email: string;
+  address: string;
+  onNameChange: (v: string) => void;
+  onPhoneChange: (v: string) => void;
+  onEmailChange: (v: string) => void;
+  onAddressChange: (v: string) => void;
+  readOnly: boolean;
+}) {
   return (
     <SettingsSection
       scope="Level B"
@@ -135,27 +360,44 @@ function ProfileTab({ tenantName }: { tenantName: string }) {
     >
       <div className="grid gap-5 sm:grid-cols-2">
         <SettingsField label="Business name">
-          <Input defaultValue={tenantName} />
+          <Input value={name} onChange={(e) => onNameChange(e.target.value)} disabled={readOnly} />
         </SettingsField>
         <SettingsField label="Public phone">
-          <Input placeholder="+1 555 010 1234" />
+          <Input
+            placeholder="+1 555 010 1234"
+            value={phone}
+            onChange={(e) => onPhoneChange(e.target.value)}
+            disabled={readOnly}
+          />
         </SettingsField>
         <SettingsField label="Public email">
-          <Input type="email" placeholder="hello@business.com" />
+          <Input
+            type="email"
+            placeholder="hello@business.com"
+            value={email}
+            onChange={(e) => onEmailChange(e.target.value)}
+            disabled={readOnly}
+          />
         </SettingsField>
         <SettingsField label="Logo">
           <div className="flex items-center gap-3">
             <div className="flex h-10 w-10 items-center justify-center rounded-md border border-dashed bg-muted/40 text-muted-foreground">
               <Building2 className="h-4 w-4" />
             </div>
-            <Button type="button" size="sm" variant="outline">
+            <Button type="button" size="sm" variant="outline" disabled={readOnly}>
               Upload
             </Button>
           </div>
         </SettingsField>
         <div className="sm:col-span-2">
           <SettingsField label="Address">
-            <Textarea rows={2} placeholder="Street, city, postal code, country" />
+            <Textarea
+              rows={2}
+              placeholder="Street, city, postal code, country"
+              value={address}
+              onChange={(e) => onAddressChange(e.target.value)}
+              disabled={readOnly}
+            />
           </SettingsField>
         </div>
       </div>
@@ -258,7 +500,19 @@ function AITab() {
   );
 }
 
-function LocalizationTab() {
+function LocalizationTab({
+  language,
+  timezone,
+  onLanguageChange,
+  onTimezoneChange,
+  readOnly,
+}: {
+  language: string;
+  timezone: string;
+  onLanguageChange: (v: string) => void;
+  onTimezoneChange: (v: string) => void;
+  readOnly: boolean;
+}) {
   return (
     <SettingsSection
       scope="Level B"
@@ -267,7 +521,7 @@ function LocalizationTab() {
     >
       <div className="grid gap-5 sm:grid-cols-2">
         <SettingsField label="Default language">
-          <Select defaultValue="en">
+          <Select value={language} onValueChange={onLanguageChange} disabled={readOnly}>
             <SelectTrigger>
               <SelectValue />
             </SelectTrigger>
@@ -280,15 +534,17 @@ function LocalizationTab() {
           </Select>
         </SettingsField>
         <SettingsField label="Time zone">
-          <Select defaultValue="auto">
+          <Select value={timezone} onValueChange={onTimezoneChange} disabled={readOnly}>
             <SelectTrigger>
               <SelectValue />
             </SelectTrigger>
             <SelectContent>
               <SelectItem value="auto">Auto-detect</SelectItem>
-              <SelectItem value="utc">UTC</SelectItem>
-              <SelectItem value="eu">Europe / Istanbul</SelectItem>
-              <SelectItem value="us">America / New York</SelectItem>
+              <SelectItem value="UTC">UTC</SelectItem>
+              <SelectItem value="Europe/Istanbul">Europe / Istanbul</SelectItem>
+              <SelectItem value="America/New_York">America / New York</SelectItem>
+              <SelectItem value="Asia/Tehran">Asia / Tehran</SelectItem>
+              <SelectItem value="Asia/Dubai">Asia / Dubai</SelectItem>
             </SelectContent>
           </Select>
         </SettingsField>
