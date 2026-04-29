@@ -1,4 +1,10 @@
-import { useMemo, useState } from "react";
+// Phase III-B — Inbox page wired to backend RPCs.
+// Loads inbox list from get_inbox_list().
+// Loads conversation detail from get_conversation_detail().
+// Falls back to demo data when Supabase is not configured.
+// Mutations (reply, assign, release-to-AI, order actions) are NOT wired.
+
+import { useCallback, useEffect, useMemo, useState } from "react";
 import { createFileRoute } from "@tanstack/react-router";
 import { PageHeader } from "@/components/shell/PageHeader";
 import { Button } from "@/components/ui/button";
@@ -13,15 +19,33 @@ import {
   CircleAlert,
   ArrowRightLeft,
   PanelRight,
+  RefreshCw,
 } from "lucide-react";
 import { conversations as demoConversations, type Conversation } from "@/lib/inbox-data";
 import { StatusBadge, ChannelBadge, OwnerBadge } from "@/components/inbox/state-badges";
 import { MessageTimeline } from "@/components/inbox/MessageTimeline";
 import { ReplyComposer } from "@/components/inbox/ReplyComposer";
 import { CustomerPanel } from "@/components/inbox/CustomerPanel";
-import { EmptyState, ErrorState, SkeletonList } from "@/components/state/UIState";
+import {
+  EmptyState,
+  ErrorState,
+  SkeletonList,
+  LoadingState,
+  DeniedState,
+} from "@/components/state/UIState";
 import { Sheet, SheetContent, SheetTitle } from "@/components/ui/sheet";
 import { cn } from "@/lib/utils";
+import { useAuth } from "@/lib/auth";
+import { useWorkspace } from "@/lib/workspace";
+import { fetchInboxList } from "@/lib/api/inbox";
+import {
+  fetchConversationDetail,
+  isDetailError,
+  type ConversationDetailResponse,
+} from "@/lib/api/conversations";
+import { classifyError } from "@/lib/api/client";
+import { mapInboxItemToConversation, mapDetailToConversation } from "@/lib/mappers/inbox-mapper";
+import { toast } from "sonner";
 
 export const Route = createFileRoute("/app/$tenant/inbox")({
   head: () => ({ meta: [{ title: "Inbox · Workspace" }] }),
@@ -65,17 +89,132 @@ const views: { id: ViewKey; label: string; predicate: (c: Conversation) => boole
 type MobilePane = "list" | "conversation";
 
 function InboxPage() {
+  const { isDemoMode } = useAuth();
+  const { businessId } = useWorkspace();
+
   const [activeView, setActiveView] = useState<ViewKey>("all");
   const [query, setQuery] = useState("");
-  const [selectedId, setSelectedId] = useState<string>(demoConversations[0].id);
-  // UX completeness: future loaders/queries will set this from backend results.
-  const [phase] = useState<"ready" | "loading" | "error">("ready");
   const [mobilePane, setMobilePane] = useState<MobilePane>("list");
   const [contextOpen, setContextOpen] = useState(false);
 
+  // ── Backend inbox list state ─────────────────────────────
+  const [backendConversations, setBackendConversations] = useState<Conversation[]>([]);
+  const [listLoading, setListLoading] = useState(!isDemoMode);
+  const [listError, setListError] = useState<string | null>(null);
+  const [listTotal, setListTotal] = useState(0);
+  const [refreshing, setRefreshing] = useState(false);
+
+  // ── Selected conversation + detail state ─────────────────
+  const [selectedId, setSelectedId] = useState<string | null>(null);
+  const [detailConversation, setDetailConversation] = useState<Conversation | null>(null);
+  const [detailLoading, setDetailLoading] = useState(false);
+  const [detailError, setDetailError] = useState<string | null>(null);
+
+  // Use demo or backend data
+  const useDemo = isDemoMode || !businessId;
+
+  // ── Load inbox list ──────────────────────────────────────
+  const loadInboxList = useCallback(
+    async (silent = false) => {
+      if (useDemo) return;
+      if (!silent) setListLoading(true);
+      else setRefreshing(true);
+      setListError(null);
+
+      const result = await fetchInboxList(businessId!);
+      if (result.error) {
+        const cat = classifyError(result.error);
+        if (cat === "access_denied") {
+          setListError("ACCESS_DENIED");
+        } else {
+          setListError(result.error);
+        }
+        if (!silent) setListLoading(false);
+        else setRefreshing(false);
+        return;
+      }
+
+      const data = result.data;
+      if (data) {
+        const mapped = data.conversations.map(mapInboxItemToConversation);
+        setBackendConversations(mapped);
+        setListTotal(data.total);
+        // Auto-select first conversation if none selected
+        if (!selectedId && mapped.length > 0) {
+          setSelectedId(mapped[0].id);
+        }
+      }
+      if (!silent) setListLoading(false);
+      else setRefreshing(false);
+    },
+    [useDemo, businessId, selectedId],
+  );
+
+  useEffect(() => {
+    if (!useDemo) {
+      loadInboxList();
+    }
+  }, [useDemo]); // eslint-disable-line react-hooks/exhaustive-deps
+
+  // ── Load conversation detail ─────────────────────────────
+  const loadDetail = useCallback(
+    async (conversationId: string) => {
+      if (useDemo) return;
+      setDetailLoading(true);
+      setDetailError(null);
+
+      const result = await fetchConversationDetail(conversationId);
+      if (result.error) {
+        const cat = classifyError(result.error);
+        setDetailError(cat === "access_denied" ? "ACCESS_DENIED" : result.error);
+        setDetailLoading(false);
+        return;
+      }
+
+      const data = result.data;
+      if (data && isDetailError(data)) {
+        if (data.error === "ACCESS_DENIED") {
+          setDetailError("ACCESS_DENIED");
+        } else if (data.error === "CONVERSATION_NOT_FOUND") {
+          setDetailError("CONVERSATION_NOT_FOUND");
+          toast.error("Conversation not found.");
+        } else {
+          setDetailError(data.error);
+        }
+        setDetailLoading(false);
+        return;
+      }
+
+      if (data && !isDetailError(data)) {
+        const listItem = backendConversations.find((c) => c.id === conversationId);
+        const mapped = mapDetailToConversation(data as ConversationDetailResponse, listItem);
+        setDetailConversation(mapped);
+      }
+      setDetailLoading(false);
+    },
+    [useDemo, backendConversations],
+  );
+
+  // Load detail when selection changes
+  useEffect(() => {
+    if (selectedId && !useDemo) {
+      loadDetail(selectedId);
+    }
+  }, [selectedId, useDemo]); // eslint-disable-line react-hooks/exhaustive-deps
+
+  // ── Determine data source ────────────────────────────────
+  const allConversations = useDemo ? demoConversations : backendConversations;
+
+  // Default selectedId for demo mode
+  useEffect(() => {
+    if (useDemo && !selectedId && demoConversations.length > 0) {
+      setSelectedId(demoConversations[0].id);
+    }
+  }, [useDemo, selectedId]);
+
   const filtered = useMemo(() => {
     const view = views.find((v) => v.id === activeView)!;
-    return demoConversations
+    return allConversations
       .filter(view.predicate)
       .filter((c) =>
         query.trim()
@@ -84,20 +223,39 @@ function InboxPage() {
               .includes(query.toLowerCase())
           : true,
       );
-  }, [activeView, query]);
+  }, [activeView, query, allConversations]);
 
-  const selected = demoConversations.find((c) => c.id === selectedId) ?? filtered[0];
+  // Resolve selected conversation for display
+  const selected = useDemo
+    ? (demoConversations.find((c) => c.id === selectedId) ?? filtered[0] ?? null)
+    : detailConversation;
 
   const channelCounts = useMemo(() => {
     const m: Record<string, number> = { whatsapp: 0, web: 0, sms: 0, email: 0 };
-    for (const c of demoConversations) m[c.channel] = (m[c.channel] ?? 0) + 1;
+    for (const c of allConversations) m[c.channel] = (m[c.channel] ?? 0) + 1;
     return m;
-  }, []);
+  }, [allConversations]);
 
   const handleSelect = (id: string) => {
     setSelectedId(id);
+    setDetailConversation(null); // clear stale detail
     setMobilePane("conversation");
   };
+
+  // ── Access denied ────────────────────────────────────────
+  if (listError === "ACCESS_DENIED") {
+    return (
+      <>
+        <PageHeader title="Inbox" description="Conversation workspace" />
+        <div className="p-6">
+          <DeniedState
+            title="Access denied"
+            description="You don't have permission to view this inbox. Contact a workspace admin."
+          />
+        </div>
+      </>
+    );
+  }
 
   return (
     <div className="flex h-[calc(100vh-3.5rem)] min-h-0 flex-col">
@@ -106,6 +264,18 @@ function InboxPage() {
         description="Primary operational workspace. Conversation states (AI / Operator / Handoff / Waiting / Confirmation) are visually distinct."
         actions={
           <>
+            {!useDemo && (
+              <Button
+                variant="outline"
+                size="sm"
+                className="gap-1.5"
+                onClick={() => loadInboxList(true)}
+                disabled={refreshing}
+              >
+                <RefreshCw className={cn("h-3.5 w-3.5", refreshing && "animate-spin")} />
+                <span className="hidden sm:inline">Refresh</span>
+              </Button>
+            )}
             <Button variant="outline" size="sm" className="gap-1.5">
               <Filter className="h-3.5 w-3.5" /> <span className="hidden sm:inline">Filters</span>
             </Button>
@@ -133,7 +303,7 @@ function InboxPage() {
             </h3>
             <ul className="mt-2 space-y-0.5">
               {views.map((v) => {
-                const count = demoConversations.filter(v.predicate).length;
+                const count = allConversations.filter(v.predicate).length;
                 const active = v.id === activeView;
                 return (
                   <li key={v.id}>
@@ -198,16 +368,14 @@ function InboxPage() {
 
           {/* List body */}
           <div className="min-h-0 flex-1 overflow-y-auto">
-            {phase === "loading" ? (
+            {listLoading ? (
               <SkeletonList rows={5} />
-            ) : phase === "error" ? (
+            ) : listError ? (
               <ErrorState
                 size="sm"
                 title="Couldn't load conversations"
-                description="Backend will own retry semantics; this is a UI placeholder."
-                onRetry={() => {
-                  /* wired by loader later */
-                }}
+                description={listError}
+                onRetry={() => loadInboxList()}
               />
             ) : filtered.length === 0 ? (
               <EmptyState
@@ -219,7 +387,7 @@ function InboxPage() {
             ) : (
               <ul className="divide-y">
                 {filtered.map((t) => {
-                  const active = t.id === selected?.id;
+                  const active = t.id === selectedId;
                   return (
                     <li key={t.id}>
                       <button
@@ -284,7 +452,29 @@ function InboxPage() {
             mobilePane === "list" ? "hidden md:flex" : "flex",
           )}
         >
-          {selected ? (
+          {detailLoading && !useDemo ? (
+            <div className="flex flex-1 items-center justify-center">
+              <LoadingState
+                title="Loading conversation…"
+                description="Fetching messages from backend."
+              />
+            </div>
+          ) : detailError === "ACCESS_DENIED" ? (
+            <div className="flex flex-1 items-center justify-center p-6">
+              <DeniedState
+                title="Access denied"
+                description="You don't have permission to view this conversation."
+              />
+            </div>
+          ) : detailError ? (
+            <div className="flex flex-1 items-center justify-center p-6">
+              <ErrorState
+                title="Failed to load conversation"
+                description={detailError}
+                onRetry={() => selectedId && loadDetail(selectedId)}
+              />
+            </div>
+          ) : selected ? (
             <ConversationView
               conversation={selected}
               onBack={() => setMobilePane("list")}
