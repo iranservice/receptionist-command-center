@@ -2,10 +2,19 @@ import { SidebarTrigger } from "@/components/ui/sidebar";
 import { Separator } from "@/components/ui/separator";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import { Bell, Search, Shield, Building2, Settings, HelpCircle, ChevronDown } from "lucide-react";
+import {
+  Bell,
+  Search,
+  Shield,
+  Building2,
+  Settings,
+  HelpCircle,
+  ChevronDown,
+  LogOut,
+} from "lucide-react";
 import { useWorkspace } from "@/lib/workspace";
 import { useAuth } from "@/lib/auth";
-import { roleLabels, type Role } from "@/lib/nav-config";
+import { roleLabels } from "@/lib/nav-config";
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -23,7 +32,7 @@ export function TopBar({
   breadcrumb?: React.ReactNode;
 }) {
   const { role } = useWorkspace();
-  const { profile, isDemoMode } = useAuth();
+  const { profile, isDemoMode, signOut } = useAuth();
   const displayName = profile?.displayName ?? "User";
   const displayEmail = profile?.email ?? "";
   const initials =
@@ -138,21 +147,21 @@ export function TopBar({
               {isDemoMode && (
                 <>
                   <DropdownMenuLabel className="text-[10px] font-semibold uppercase tracking-wider text-muted-foreground">
-                    Demo role · UI hint only
+                    Demo mode
                   </DropdownMenuLabel>
-                  {(["super_admin", "business_admin", "operator"] as Role[]).map((r) => (
-                    <DropdownMenuItem key={r} className="justify-between">
-                      <span>{roleLabels[r]}</span>
-                      {role === r && <span className="h-1.5 w-1.5 rounded-full bg-primary" />}
-                    </DropdownMenuItem>
-                  ))}
+                  <div className="px-2 py-1.5 text-xs text-muted-foreground">
+                    Using sample workspace data. Connect Supabase to use real accounts.
+                  </div>
                 </>
               )}
               <DropdownMenuSeparator />
               <DropdownMenuItem className="text-muted-foreground">
                 Account settings
               </DropdownMenuItem>
-              <DropdownMenuItem className="text-muted-foreground">Sign out</DropdownMenuItem>
+              <DropdownMenuItem className="text-muted-foreground" onClick={() => void signOut()}>
+                <LogOut className="mr-2 h-3.5 w-3.5" />
+                Sign out
+              </DropdownMenuItem>
             </DropdownMenuContent>
           </DropdownMenu>
         </div>
