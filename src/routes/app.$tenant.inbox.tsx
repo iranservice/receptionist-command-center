@@ -1,14 +1,26 @@
-// Phase III-B — Inbox page wired to backend RPCs.
+// Phase IV-B — Inbox page wired to backend RPCs.
 // Loads inbox list from get_inbox_list().
 // Loads conversation detail from get_conversation_detail().
+// Operator mutations wired: reply, assign, unassign, transfer, release-to-AI.
 // Falls back to demo data when Supabase is not configured.
-// Mutations (reply, assign, release-to-AI, order actions) are NOT wired.
+// Order mutations are NOT wired. Approvals/Analytics remain demo.
 
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { createFileRoute } from "@tanstack/react-router";
 import { PageHeader } from "@/components/shell/PageHeader";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import { Textarea } from "@/components/ui/textarea";
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
 import {
   Search,
   Filter,
@@ -20,12 +32,13 @@ import {
   ArrowRightLeft,
   PanelRight,
   RefreshCw,
+  Loader2,
 } from "lucide-react";
 import { conversations as demoConversations, type Conversation } from "@/lib/inbox-data";
 import { StatusBadge, ChannelBadge, OwnerBadge } from "@/components/inbox/state-badges";
 import { MessageTimeline } from "@/components/inbox/MessageTimeline";
 import { ReplyComposer } from "@/components/inbox/ReplyComposer";
-import { CustomerPanel } from "@/components/inbox/CustomerPanel";
+import { CustomerPanel, type OwnershipActions } from "@/components/inbox/CustomerPanel";
 import {
   EmptyState,
   ErrorState,
@@ -45,6 +58,16 @@ import {
 } from "@/lib/api/conversations";
 import { classifyError } from "@/lib/api/client";
 import { mapInboxItemToConversation, mapDetailToConversation } from "@/lib/mappers/inbox-mapper";
+import {
+  sendOperatorReply,
+  assignConversation,
+  unassignConversation,
+  transferConversation,
+  releaseConversationToAI,
+  isActionError,
+  getActionErrorMessage,
+} from "@/lib/api/conversation-actions";
+import { fetchBusinessMembers, type BusinessMemberRow } from "@/lib/api/members";
 import { toast } from "sonner";
 
 export const Route = createFileRoute("/app/$tenant/inbox")({
@@ -241,6 +264,154 @@ function InboxPage() {
     setDetailConversation(null); // clear stale detail
     setMobilePane("conversation");
   };
+
+  // ── Mutation state ──────────────────────────────────────────
+  const { user } = useAuth();
+  const [sending, setSending] = useState(false);
+  const [reassignOpen, setReassignOpen] = useState(false);
+  const [operators, setOperators] = useState<BusinessMemberRow[]>([]);
+  const [operatorsLoading, setOperatorsLoading] = useState(false);
+
+  /** Refresh detail + inbox list after a successful mutation. */
+  const refreshAfterAction = useCallback(async () => {
+    if (selectedId && !useDemo) {
+      loadDetail(selectedId);
+    }
+    loadInboxList(true);
+  }, [selectedId, useDemo, loadDetail, loadInboxList]);
+
+  // ── Operator reply handler ──────────────────────────────────
+  const handleSendReply = useCallback(
+    async (content: string): Promise<boolean> => {
+      if (!selectedId || useDemo) {
+        toast.info("Demo mode — reply not sent.");
+        return false;
+      }
+      setSending(true);
+      const result = await sendOperatorReply(selectedId, content);
+      setSending(false);
+      if (result.error) {
+        toast.error(result.error);
+        return false;
+      }
+      if (result.data && isActionError(result.data)) {
+        toast.error(getActionErrorMessage(result.data.error));
+        return false;
+      }
+      toast.success("Reply sent.");
+      refreshAfterAction();
+      return true;
+    },
+    [selectedId, useDemo, refreshAfterAction],
+  );
+
+  // ── Take over (assign to self) ──────────────────────────────
+  const handleTakeOver = useCallback(async () => {
+    if (!selectedId || useDemo || !user) {
+      toast.info("Demo mode — action not available.");
+      return;
+    }
+    const result = await assignConversation(selectedId, user.id);
+    if (result.error) {
+      toast.error(result.error);
+      return;
+    }
+    if (result.data && isActionError(result.data)) {
+      toast.error(getActionErrorMessage(result.data.error));
+      return;
+    }
+    toast.success("Conversation assigned to you.");
+    refreshAfterAction();
+  }, [selectedId, useDemo, user, refreshAfterAction]);
+
+  // ── Release to AI ───────────────────────────────────────────
+  const handleReleaseToAI = useCallback(async () => {
+    if (!selectedId || useDemo) {
+      toast.info("Demo mode — action not available.");
+      return;
+    }
+    const result = await releaseConversationToAI(selectedId);
+    if (result.error) {
+      toast.error(result.error);
+      return;
+    }
+    if (result.data && isActionError(result.data)) {
+      toast.error(getActionErrorMessage(result.data.error));
+      return;
+    }
+    toast.success("Conversation released to AI.");
+    refreshAfterAction();
+  }, [selectedId, useDemo, refreshAfterAction]);
+
+  // ── Unassign ────────────────────────────────────────────────
+  const handleUnassign = useCallback(async () => {
+    if (!selectedId || useDemo) {
+      toast.info("Demo mode — action not available.");
+      return;
+    }
+    const result = await unassignConversation(selectedId);
+    if (result.error) {
+      toast.error(result.error);
+      return;
+    }
+    if (result.data && isActionError(result.data)) {
+      toast.error(getActionErrorMessage(result.data.error));
+      return;
+    }
+    toast.success("Conversation unassigned.");
+    refreshAfterAction();
+  }, [selectedId, useDemo, refreshAfterAction]);
+
+  // ── Reassign dialog ─────────────────────────────────────────
+  const openReassignDialog = useCallback(async () => {
+    if (useDemo) {
+      toast.info("Demo mode — action not available.");
+      return;
+    }
+    setReassignOpen(true);
+    if (businessId && operators.length === 0) {
+      setOperatorsLoading(true);
+      const result = await fetchBusinessMembers(businessId);
+      if (result.data) {
+        setOperators(
+          result.data.filter(
+            (m) => m.is_active && ["owner", "manager", "operator"].includes(m.role),
+          ),
+        );
+      }
+      setOperatorsLoading(false);
+    }
+  }, [useDemo, businessId, operators.length]);
+
+  const handleTransfer = useCallback(
+    async (toOperatorId: string, reason?: string) => {
+      if (!selectedId || useDemo) return;
+      const result = await transferConversation(selectedId, toOperatorId, reason);
+      if (result.error) {
+        toast.error(result.error);
+        return;
+      }
+      if (result.data && isActionError(result.data)) {
+        toast.error(getActionErrorMessage(result.data.error));
+        return;
+      }
+      toast.success("Conversation reassigned.");
+      setReassignOpen(false);
+      refreshAfterAction();
+    },
+    [selectedId, useDemo, refreshAfterAction],
+  );
+
+  // Ownership actions passed to CustomerPanel
+  const ownershipActions: OwnershipActions = useMemo(
+    () => ({
+      onTakeOver: handleTakeOver,
+      onReleaseToAI: handleReleaseToAI,
+      onReassign: openReassignDialog,
+      onUnassign: handleUnassign,
+    }),
+    [handleTakeOver, handleReleaseToAI, openReassignDialog, handleUnassign],
+  );
 
   // ── Access denied ────────────────────────────────────────
   if (listError === "ACCESS_DENIED") {
@@ -479,6 +650,9 @@ function InboxPage() {
               conversation={selected}
               onBack={() => setMobilePane("list")}
               onOpenContext={() => setContextOpen(true)}
+              onSendReply={handleSendReply}
+              sending={sending}
+              onTakeHandoff={handleTakeOver}
             />
           ) : (
             <EmptyState
@@ -492,7 +666,7 @@ function InboxPage() {
         {/* RIGHT: Customer + ownership + order — desktop only */}
         <aside className="hidden min-h-0 overflow-y-auto border-l xl:block">
           {selected ? (
-            <CustomerPanel conversation={selected} />
+            <CustomerPanel conversation={selected} actions={ownershipActions} />
           ) : (
             <EmptyState size="sm" title="No conversation selected" />
           )}
@@ -504,12 +678,21 @@ function InboxPage() {
         <SheetContent side="right" className="w-full max-w-md overflow-y-auto p-0 sm:max-w-md">
           <SheetTitle className="sr-only">Customer & order context</SheetTitle>
           {selected ? (
-            <CustomerPanel conversation={selected} />
+            <CustomerPanel conversation={selected} actions={ownershipActions} />
           ) : (
             <EmptyState size="sm" title="No conversation selected" />
           )}
         </SheetContent>
       </Sheet>
+
+      {/* Reassign dialog */}
+      <ReassignDialog
+        open={reassignOpen}
+        onOpenChange={setReassignOpen}
+        operators={operators}
+        loading={operatorsLoading}
+        onTransfer={handleTransfer}
+      />
     </div>
   );
 }
@@ -518,10 +701,16 @@ function ConversationView({
   conversation,
   onBack,
   onOpenContext,
+  onSendReply,
+  sending,
+  onTakeHandoff,
 }: {
   conversation: Conversation;
   onBack: () => void;
   onOpenContext: () => void;
+  onSendReply?: (content: string) => Promise<boolean>;
+  sending?: boolean;
+  onTakeHandoff?: () => Promise<void>;
 }) {
   const ownerLabel =
     conversation.owner === "ai" ? "AI" : (conversation.assignedTo?.name ?? "Operator");
@@ -565,7 +754,11 @@ function ConversationView({
         </div>
         <div className="flex shrink-0 items-center gap-1">
           {conversation.status === "needs_handoff" && (
-            <Button size="sm" className="h-8 gap-1.5 bg-warn text-warn-foreground hover:bg-warn/90">
+            <Button
+              size="sm"
+              className="h-8 gap-1.5 bg-warn text-warn-foreground hover:bg-warn/90"
+              onClick={onTakeHandoff}
+            >
               <ArrowRightLeft className="h-3.5 w-3.5" />
               <span className="hidden sm:inline">Take handoff</span>
             </Button>
@@ -610,7 +803,103 @@ function ConversationView({
         replyAllowed={conversation.replyAllowed}
         reason={conversation.replyDisallowedReason}
         ownerLabel={ownerLabel}
+        onSendReply={onSendReply}
+        sending={sending}
       />
     </>
+  );
+}
+
+// ── Reassign Dialog ─────────────────────────────────────────
+
+function ReassignDialog({
+  open,
+  onOpenChange,
+  operators,
+  loading,
+  onTransfer,
+}: {
+  open: boolean;
+  onOpenChange: (open: boolean) => void;
+  operators: BusinessMemberRow[];
+  loading: boolean;
+  onTransfer: (toOperatorId: string, reason?: string) => Promise<void>;
+}) {
+  const [selectedOp, setSelectedOp] = useState<string>("");
+  const [reason, setReason] = useState("");
+  const [submitting, setSubmitting] = useState(false);
+
+  const handleSubmit = async () => {
+    if (!selectedOp) return;
+    setSubmitting(true);
+    await onTransfer(selectedOp, reason.trim() || undefined);
+    setSubmitting(false);
+    setSelectedOp("");
+    setReason("");
+  };
+
+  return (
+    <Dialog open={open} onOpenChange={onOpenChange}>
+      <DialogContent className="sm:max-w-md">
+        <DialogHeader>
+          <DialogTitle>Reassign conversation</DialogTitle>
+          <DialogDescription>
+            Select an operator to transfer this conversation to.
+          </DialogDescription>
+        </DialogHeader>
+
+        <div className="space-y-4 py-2">
+          <div className="space-y-2">
+            <Label htmlFor="reassign-operator">Operator</Label>
+            {loading ? (
+              <div className="flex items-center gap-2 text-sm text-muted-foreground">
+                <Loader2 className="h-4 w-4 animate-spin" /> Loading operators…
+              </div>
+            ) : operators.length === 0 ? (
+              <p className="text-sm text-muted-foreground">No operators available.</p>
+            ) : (
+              <select
+                id="reassign-operator"
+                value={selectedOp}
+                onChange={(e) => setSelectedOp(e.target.value)}
+                className="flex h-9 w-full rounded-md border border-input bg-transparent px-3 py-1 text-sm shadow-sm transition-colors focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring"
+              >
+                <option value="">Select operator…</option>
+                {operators.map((op) => (
+                  <option key={op.user_id} value={op.user_id}>
+                    {op.display_name ?? op.email ?? op.user_id} ({op.role})
+                  </option>
+                ))}
+              </select>
+            )}
+          </div>
+
+          <div className="space-y-2">
+            <Label htmlFor="reassign-reason">Reason (optional)</Label>
+            <Input
+              id="reassign-reason"
+              value={reason}
+              onChange={(e) => setReason(e.target.value)}
+              placeholder="e.g. Specializes in this customer"
+            />
+          </div>
+        </div>
+
+        <DialogFooter>
+          <Button variant="outline" onClick={() => onOpenChange(false)}>
+            Cancel
+          </Button>
+          <Button onClick={handleSubmit} disabled={!selectedOp || submitting}>
+            {submitting ? (
+              <>
+                <Loader2 className="mr-1.5 h-3.5 w-3.5 animate-spin" /> Transferring…
+              </>
+            ) : (
+              "Transfer"
+            )}
+          </Button>
+        </DialogFooter>
+      </DialogContent>
+    </Dialog>
   );
 }

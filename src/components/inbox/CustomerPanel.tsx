@@ -1,8 +1,10 @@
+import { useState } from "react";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import {
   Bot,
   User,
+  UserMinus,
   ArrowRightLeft,
   Phone,
   MapPin,
@@ -10,10 +12,19 @@ import {
   Clock,
   StickyNote,
   Tag,
+  Loader2,
 } from "lucide-react";
 import type { Conversation } from "@/lib/inbox-data";
 import { OwnerBadge } from "./state-badges";
 import { OrderPanel } from "./OrderPanel";
+
+/** Callbacks for conversation ownership actions. */
+export type OwnershipActions = {
+  onTakeOver?: () => Promise<void>;
+  onReleaseToAI?: () => Promise<void>;
+  onReassign?: () => void; // Opens reassign dialog — no async needed
+  onUnassign?: () => Promise<void>;
+};
 
 function Section({
   title,
@@ -37,10 +48,30 @@ function Section({
   );
 }
 
-export function CustomerPanel({ conversation }: { conversation: Conversation }) {
+export function CustomerPanel({
+  conversation,
+  actions,
+}: {
+  conversation: Conversation;
+  actions?: OwnershipActions;
+}) {
   const c = conversation.customer;
   // Prefer the multi-order list if present, fall back to the single linked order.
   const orders = conversation.orders ?? (conversation.order ? [conversation.order] : []);
+
+  const [actionLoading, setActionLoading] = useState<string | null>(null);
+
+  const handleAction = async (key: string, fn?: () => Promise<void>) => {
+    if (!fn || actionLoading) return;
+    setActionLoading(key);
+    try {
+      await fn();
+    } finally {
+      setActionLoading(null);
+    }
+  };
+
+  const isClosed = conversation.status === "closed";
 
   return (
     <div className="flex h-full flex-col divide-y bg-card/40">
@@ -92,15 +123,59 @@ export function CustomerPanel({ conversation }: { conversation: Conversation }) 
             </div>
           )}
           <div className="flex flex-wrap gap-1.5 pt-1">
-            <Button variant="outline" size="sm" className="h-7 gap-1 text-xs">
-              <User className="h-3 w-3" /> Take over
+            <Button
+              variant="outline"
+              size="sm"
+              className="h-7 gap-1 text-xs"
+              disabled={isClosed || actionLoading !== null}
+              onClick={() => handleAction("takeover", actions?.onTakeOver)}
+            >
+              {actionLoading === "takeover" ? (
+                <Loader2 className="h-3 w-3 animate-spin" />
+              ) : (
+                <User className="h-3 w-3" />
+              )}
+              Take over
             </Button>
-            <Button variant="outline" size="sm" className="h-7 gap-1 text-xs">
-              <Bot className="h-3 w-3" /> Release to AI
+            <Button
+              variant="outline"
+              size="sm"
+              className="h-7 gap-1 text-xs"
+              disabled={isClosed || actionLoading !== null}
+              onClick={() => handleAction("release", actions?.onReleaseToAI)}
+            >
+              {actionLoading === "release" ? (
+                <Loader2 className="h-3 w-3 animate-spin" />
+              ) : (
+                <Bot className="h-3 w-3" />
+              )}
+              Release to AI
             </Button>
-            <Button variant="outline" size="sm" className="h-7 gap-1 text-xs">
+            <Button
+              variant="outline"
+              size="sm"
+              className="h-7 gap-1 text-xs"
+              disabled={isClosed || actionLoading !== null}
+              onClick={() => actions?.onReassign?.()}
+            >
               <ArrowRightLeft className="h-3 w-3" /> Reassign
             </Button>
+            {conversation.assignedTo && (
+              <Button
+                variant="outline"
+                size="sm"
+                className="h-7 gap-1 text-xs"
+                disabled={isClosed || actionLoading !== null}
+                onClick={() => handleAction("unassign", actions?.onUnassign)}
+              >
+                {actionLoading === "unassign" ? (
+                  <Loader2 className="h-3 w-3 animate-spin" />
+                ) : (
+                  <UserMinus className="h-3 w-3" />
+                )}
+                Unassign
+              </Button>
+            )}
           </div>
           <p className="pt-1 text-[10px] text-muted-foreground">
             Actions are mirrored from backend; final permission is enforced server-side.

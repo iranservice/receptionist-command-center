@@ -1,17 +1,23 @@
 import { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
-import { Lock, Paperclip, Send, StickyNote, Sparkles } from "lucide-react";
+import { Lock, Loader2, Paperclip, Send, StickyNote, Sparkles } from "lucide-react";
 import { cn } from "@/lib/utils";
 
 export function ReplyComposer({
   replyAllowed,
   reason,
   ownerLabel,
+  onSendReply,
+  sending,
 }: {
   replyAllowed: boolean;
   reason?: string;
   ownerLabel: string;
+  /** Called when operator submits a reply. Returns true on success (clears composer). */
+  onSendReply?: (content: string) => Promise<boolean>;
+  /** True while a reply is being sent. */
+  sending?: boolean;
 }) {
   const [mode, setMode] = useState<"reply" | "note">("reply");
   const [value, setValue] = useState("");
@@ -31,6 +37,20 @@ export function ReplyComposer({
       </div>
     );
   }
+
+  const handleSend = async () => {
+    if (!value.trim() || mode !== "reply" || !onSendReply) return;
+    const ok = await onSendReply(value.trim());
+    if (ok) setValue("");
+  };
+
+  const handleKeyDown = (e: React.KeyboardEvent) => {
+    // Ctrl/Cmd + Enter to send
+    if ((e.ctrlKey || e.metaKey) && e.key === "Enter" && value.trim() && mode === "reply") {
+      e.preventDefault();
+      handleSend();
+    }
+  };
 
   return (
     <div className="border-t bg-card">
@@ -73,6 +93,8 @@ export function ReplyComposer({
         <Textarea
           value={value}
           onChange={(e) => setValue(e.target.value)}
+          onKeyDown={handleKeyDown}
+          disabled={sending}
           placeholder={
             mode === "reply"
               ? "Type a reply to the customer…"
@@ -89,9 +111,18 @@ export function ReplyComposer({
               <Sparkles className="h-3.5 w-3.5" /> Suggest reply
             </Button>
           </div>
-          <Button size="sm" className="h-8 gap-1.5" disabled={!value.trim()}>
-            <Send className="h-3.5 w-3.5" />
-            {mode === "reply" ? "Send reply" : "Save note"}
+          <Button
+            size="sm"
+            className="h-8 gap-1.5"
+            disabled={!value.trim() || sending || mode !== "reply"}
+            onClick={handleSend}
+          >
+            {sending ? (
+              <Loader2 className="h-3.5 w-3.5 animate-spin" />
+            ) : (
+              <Send className="h-3.5 w-3.5" />
+            )}
+            {mode === "reply" ? (sending ? "Sending…" : "Send reply") : "Save note"}
           </Button>
         </div>
       </div>
