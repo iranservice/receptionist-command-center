@@ -171,17 +171,20 @@ function mapMessage(msg: BackendMessage): Message {
 function mapOrder(order: ConversationOrderSummary): LinkedOrder {
   const statusMap: Record<string, OrderStatus> = {
     draft: "draft",
+    pending_confirmation: "pending_customer_confirmation",
     pending_customer_confirmation: "pending_customer_confirmation",
     confirmed: "confirmed",
     cancelled: "cancelled",
   };
 
+  // Backend sends full action names (view_order, confirm_order, etc.)
+  // that match the frontend OrderAction type — identity mapping.
   const actionMap: Record<string, OrderAction> = {
-    view: "view_order",
-    request_confirmation: "request_customer_confirmation",
-    confirm: "confirm_order",
-    cancel: "cancel_order",
-    edit: "edit_order",
+    view_order: "view_order",
+    confirm_order: "confirm_order",
+    cancel_order: "cancel_order",
+    request_customer_confirmation: "request_customer_confirmation",
+    edit_order: "edit_order",
   };
 
   return {
@@ -193,7 +196,7 @@ function mapOrder(order: ConversationOrderSummary): LinkedOrder {
     items: [{ qty: order.item_count, name: `${order.item_count} item(s)` }],
     totalLabel: order.total != null ? `€ ${Number(order.total).toFixed(2)}` : "—",
     customerConfirmation: {
-      status: order.status === "pending_customer_confirmation" ? "requested" : "not_required",
+      status: statusMap[order.status] === "pending_customer_confirmation" ? "requested" : "not_required",
     },
     availableActions: (order.available_actions ?? []).map(
       (a) => actionMap[a] ?? ("view_order" as OrderAction),
