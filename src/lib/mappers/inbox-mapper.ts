@@ -196,7 +196,8 @@ function mapOrder(order: ConversationOrderSummary): LinkedOrder {
     items: [{ qty: order.item_count, name: `${order.item_count} item(s)` }],
     totalLabel: order.total != null ? `€ ${Number(order.total).toFixed(2)}` : "—",
     customerConfirmation: {
-      status: statusMap[order.status] === "pending_customer_confirmation" ? "requested" : "not_required",
+      status:
+        statusMap[order.status] === "pending_customer_confirmation" ? "requested" : "not_required",
     },
     availableActions: (order.available_actions ?? []).map(
       (a) => actionMap[a] ?? ("view_order" as OrderAction),
