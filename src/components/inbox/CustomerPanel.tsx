@@ -16,7 +16,7 @@ import {
 } from "lucide-react";
 import type { Conversation } from "@/lib/inbox-data";
 import { OwnerBadge } from "./state-badges";
-import { OrderPanel } from "./OrderPanel";
+import { OrderPanel, type OrderActionHandlers } from "./OrderPanel";
 
 /** Callbacks for conversation ownership actions. */
 export type OwnershipActions = {
@@ -51,9 +51,11 @@ function Section({
 export function CustomerPanel({
   conversation,
   actions,
+  orderActionHandlers,
 }: {
   conversation: Conversation;
   actions?: OwnershipActions;
+  orderActionHandlers?: OrderActionHandlers;
 }) {
   const c = conversation.customer;
   // Prefer the multi-order list if present, fall back to the single linked order.
@@ -214,7 +216,7 @@ export function CustomerPanel({
       </Section>
 
       {/* Linked order — LV-4 enhanced panel */}
-      <OrderPanel orders={orders} />
+      <OrderPanel orders={orders} actionHandlers={orderActionHandlers} />
 
       {/* Tags & notes */}
       <Section

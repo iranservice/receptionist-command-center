@@ -1,9 +1,9 @@
-// Phase IV-B — Inbox page wired to backend RPCs.
+// Phase V-B — Inbox page wired to backend RPCs.
 // Loads inbox list from get_inbox_list().
 // Loads conversation detail from get_conversation_detail().
 // Operator mutations wired: reply, assign, unassign, transfer, release-to-AI.
+// Order mutations wired: confirm, cancel, request customer confirmation.
 // Falls back to demo data when Supabase is not configured.
-// Order mutations are NOT wired. Approvals/Analytics remain demo.
 
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { createFileRoute } from "@tanstack/react-router";
@@ -67,6 +67,14 @@ import {
   isActionError,
   getActionErrorMessage,
 } from "@/lib/api/conversation-actions";
+import {
+  requestCustomerConfirmation,
+  confirmOrder,
+  cancelOrder,
+  isOrderActionError,
+  getOrderErrorMessage,
+} from "@/lib/api/order-actions";
+import type { OrderActionHandlers } from "@/components/inbox/OrderPanel";
 import { fetchBusinessMembers, type BusinessMemberRow } from "@/lib/api/members";
 import { toast } from "sonner";
 
@@ -413,6 +421,108 @@ function InboxPage() {
     [handleTakeOver, handleReleaseToAI, openReassignDialog, handleUnassign],
   );
 
+  // ── Order mutation handlers ──────────────────────────────────
+  const [cancelDialogOpen, setCancelDialogOpen] = useState(false);
+  const [cancelTargetOrderId, setCancelTargetOrderId] = useState<string | null>(null);
+
+  const handleRequestConfirmation = useCallback(
+    async (orderId: string) => {
+      if (useDemo) {
+        toast.info("Demo mode — action not available.");
+        return;
+      }
+      const result = await requestCustomerConfirmation(orderId);
+      if (result.error) {
+        toast.error(result.error);
+        return;
+      }
+      if (result.data && isOrderActionError(result.data)) {
+        toast.error(getOrderErrorMessage(result.data.error));
+        return;
+      }
+      toast.success("Confirmation requested.");
+      refreshAfterAction();
+    },
+    [useDemo, refreshAfterAction],
+  );
+
+  const handleConfirmOrder = useCallback(
+    async (orderId: string) => {
+      if (useDemo) {
+        toast.info("Demo mode — action not available.");
+        return;
+      }
+      const result = await confirmOrder(orderId);
+      if (result.error) {
+        toast.error(result.error);
+        return;
+      }
+      if (result.data && isOrderActionError(result.data)) {
+        toast.error(getOrderErrorMessage(result.data.error));
+        return;
+      }
+      toast.success("Order confirmed.");
+      refreshAfterAction();
+    },
+    [useDemo, refreshAfterAction],
+  );
+
+  const handleCancelOrder = useCallback(
+    async (orderId: string, reason?: string) => {
+      if (useDemo) {
+        toast.info("Demo mode — action not available.");
+        return;
+      }
+      // Open cancel dialog to collect reason
+      if (!reason) {
+        setCancelTargetOrderId(orderId);
+        setCancelDialogOpen(true);
+        return;
+      }
+      const result = await cancelOrder(orderId, reason);
+      if (result.error) {
+        toast.error(result.error);
+        return;
+      }
+      if (result.data && isOrderActionError(result.data)) {
+        toast.error(getOrderErrorMessage(result.data.error));
+        return;
+      }
+      toast.success("Order cancelled.");
+      refreshAfterAction();
+    },
+    [useDemo, refreshAfterAction],
+  );
+
+  const handleCancelOrderSubmit = useCallback(
+    async (reason: string) => {
+      if (!cancelTargetOrderId) return;
+      const result = await cancelOrder(cancelTargetOrderId, reason || undefined);
+      if (result.error) {
+        toast.error(result.error);
+        return;
+      }
+      if (result.data && isOrderActionError(result.data)) {
+        toast.error(getOrderErrorMessage(result.data.error));
+        return;
+      }
+      toast.success("Order cancelled.");
+      setCancelDialogOpen(false);
+      setCancelTargetOrderId(null);
+      refreshAfterAction();
+    },
+    [cancelTargetOrderId, refreshAfterAction],
+  );
+
+  const orderActionHandlers: OrderActionHandlers = useMemo(
+    () => ({
+      onRequestConfirmation: handleRequestConfirmation,
+      onConfirmOrder: handleConfirmOrder,
+      onCancelOrder: handleCancelOrder,
+    }),
+    [handleRequestConfirmation, handleConfirmOrder, handleCancelOrder],
+  );
+
   // ── Access denied ────────────────────────────────────────
   if (listError === "ACCESS_DENIED") {
     return (
@@ -666,7 +776,11 @@ function InboxPage() {
         {/* RIGHT: Customer + ownership + order — desktop only */}
         <aside className="hidden min-h-0 overflow-y-auto border-l xl:block">
           {selected ? (
-            <CustomerPanel conversation={selected} actions={ownershipActions} />
+            <CustomerPanel
+              conversation={selected}
+              actions={ownershipActions}
+              orderActionHandlers={orderActionHandlers}
+            />
           ) : (
             <EmptyState size="sm" title="No conversation selected" />
           )}
@@ -678,12 +792,26 @@ function InboxPage() {
         <SheetContent side="right" className="w-full max-w-md overflow-y-auto p-0 sm:max-w-md">
           <SheetTitle className="sr-only">Customer & order context</SheetTitle>
           {selected ? (
-            <CustomerPanel conversation={selected} actions={ownershipActions} />
+            <CustomerPanel
+              conversation={selected}
+              actions={ownershipActions}
+              orderActionHandlers={orderActionHandlers}
+            />
           ) : (
             <EmptyState size="sm" title="No conversation selected" />
           )}
         </SheetContent>
       </Sheet>
+
+      {/* Cancel order dialog */}
+      <CancelOrderDialog
+        open={cancelDialogOpen}
+        onOpenChange={(open) => {
+          setCancelDialogOpen(open);
+          if (!open) setCancelTargetOrderId(null);
+        }}
+        onSubmit={handleCancelOrderSubmit}
+      />
 
       {/* Reassign dialog */}
       <ReassignDialog
@@ -896,6 +1024,69 @@ function ReassignDialog({
               </>
             ) : (
               "Transfer"
+            )}
+          </Button>
+        </DialogFooter>
+      </DialogContent>
+    </Dialog>
+  );
+}
+
+// ── Cancel Order Dialog ─────────────────────────────────────
+
+function CancelOrderDialog({
+  open,
+  onOpenChange,
+  onSubmit,
+}: {
+  open: boolean;
+  onOpenChange: (open: boolean) => void;
+  onSubmit: (reason: string) => Promise<void>;
+}) {
+  const [reason, setReason] = useState("");
+  const [submitting, setSubmitting] = useState(false);
+
+  const handleSubmit = async () => {
+    setSubmitting(true);
+    await onSubmit(reason.trim());
+    setSubmitting(false);
+    setReason("");
+  };
+
+  return (
+    <Dialog open={open} onOpenChange={onOpenChange}>
+      <DialogContent className="sm:max-w-md">
+        <DialogHeader>
+          <DialogTitle>Cancel order</DialogTitle>
+          <DialogDescription>
+            Are you sure you want to cancel this order? This action is recorded in the audit log.
+          </DialogDescription>
+        </DialogHeader>
+
+        <div className="space-y-4 py-2">
+          <div className="space-y-2">
+            <Label htmlFor="cancel-reason">Reason (optional)</Label>
+            <Textarea
+              id="cancel-reason"
+              value={reason}
+              onChange={(e) => setReason(e.target.value)}
+              placeholder="e.g. Customer changed their mind"
+              rows={2}
+            />
+          </div>
+        </div>
+
+        <DialogFooter>
+          <Button variant="outline" onClick={() => onOpenChange(false)}>
+            Keep order
+          </Button>
+          <Button variant="destructive" onClick={handleSubmit} disabled={submitting}>
+            {submitting ? (
+              <>
+                <Loader2 className="mr-1.5 h-3.5 w-3.5 animate-spin" /> Cancelling…
+              </>
+            ) : (
+              "Cancel order"
             )}
           </Button>
         </DialogFooter>

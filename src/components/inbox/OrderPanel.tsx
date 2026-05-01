@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useCallback } from "react";
 import { Card } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -18,9 +18,22 @@ import {
   Info,
   CircleDashed,
   RefreshCw,
+  Loader2,
 } from "lucide-react";
 import type { LinkedOrder, OrderAction, OrderStatus, CustomerConfirmation } from "@/lib/inbox-data";
 import { cn } from "@/lib/utils";
+
+// ---------------------------------------------------------------------------
+// Action callback types
+// ---------------------------------------------------------------------------
+
+/** Callbacks for order mutation actions. All are optional for graceful degradation. */
+export type OrderActionHandlers = {
+  onRequestConfirmation?: (orderId: string) => Promise<void>;
+  onConfirmOrder?: (orderId: string) => Promise<void>;
+  onCancelOrder?: (orderId: string, reason?: string) => Promise<void>;
+  onViewOrder?: (orderId: string) => void;
+};
 
 // ---------------------------------------------------------------------------
 // Order status badge
@@ -228,7 +241,13 @@ function OrderTabs({
 // Main panel
 // ---------------------------------------------------------------------------
 
-export function OrderPanel({ orders }: { orders: LinkedOrder[] | undefined }) {
+export function OrderPanel({
+  orders,
+  actionHandlers,
+}: {
+  orders: LinkedOrder[] | undefined;
+  actionHandlers?: OrderActionHandlers;
+}) {
   const list = orders ?? [];
   const [selectedId, setSelectedId] = useState<string>(list[0]?.id ?? "");
   const order = list.find((o) => o.id === selectedId) ?? list[0];
@@ -253,7 +272,7 @@ export function OrderPanel({ orders }: { orders: LinkedOrder[] | undefined }) {
         }
       />
       <OrderTabs orders={list} selectedId={order.id} onSelect={setSelectedId} />
-      <OrderCard order={order} />
+      <OrderCard order={order} actionHandlers={actionHandlers} />
     </div>
   );
 }
@@ -273,7 +292,13 @@ function SectionHeader({ title, right }: { title: string; right?: React.ReactNod
 // Per-order content
 // ---------------------------------------------------------------------------
 
-function OrderCard({ order }: { order: LinkedOrder }) {
+function OrderCard({
+  order,
+  actionHandlers,
+}: {
+  order: LinkedOrder;
+  actionHandlers?: OrderActionHandlers;
+}) {
   const isCancelled = order.status === "cancelled";
   const isConfirmed = order.status === "confirmed";
   const isPending = order.status === "pending_customer_confirmation";
@@ -345,7 +370,7 @@ function OrderCard({ order }: { order: LinkedOrder }) {
           )}
 
         {/* Actions */}
-        <ActionsRow order={order} />
+        <ActionsRow order={order} actionHandlers={actionHandlers} />
 
         {/* Source-of-truth note */}
         <p className="mt-2 flex items-start gap-1 text-[10px] text-muted-foreground">
@@ -530,8 +555,16 @@ function SuggestedMessage({
   );
 }
 
-function ActionsRow({ order }: { order: LinkedOrder }) {
+function ActionsRow({
+  order,
+  actionHandlers,
+}: {
+  order: LinkedOrder;
+  actionHandlers?: OrderActionHandlers;
+}) {
   const actions = order.availableActions;
+  const [loadingAction, setLoadingAction] = useState<string | null>(null);
+
   // Order actions in a sensible visual priority
   const priority: OrderAction[] = [
     "request_customer_confirmation",
@@ -553,6 +586,35 @@ function ActionsRow({ order }: { order: LinkedOrder }) {
           : ["view_order"];
 
   const missing = expected.filter((a) => !actions.includes(a));
+
+  const handleClick = useCallback(
+    async (action: OrderAction) => {
+      if (loadingAction) return;
+      setLoadingAction(action);
+      try {
+        switch (action) {
+          case "request_customer_confirmation":
+            await actionHandlers?.onRequestConfirmation?.(order.id);
+            break;
+          case "confirm_order":
+            await actionHandlers?.onConfirmOrder?.(order.id);
+            break;
+          case "cancel_order":
+            await actionHandlers?.onCancelOrder?.(order.id);
+            break;
+          case "view_order":
+            actionHandlers?.onViewOrder?.(order.id);
+            break;
+          case "edit_order":
+            // Not wired in Phase V-B
+            break;
+        }
+      } finally {
+        setLoadingAction(null);
+      }
+    },
+    [loadingAction, actionHandlers, order.id],
+  );
 
   return (
     <div className="mt-3">
@@ -579,18 +641,27 @@ function ActionsRow({ order }: { order: LinkedOrder }) {
             order.status === "pending_customer_confirmation";
           const label = isResend ? "Resend confirmation" : d.label;
           const isDestructive = a === "cancel_order";
+          const isLoading = loadingAction === a;
           return (
             <Button
               key={a}
               variant={d.variant ?? "outline"}
               size="sm"
+              disabled={loadingAction !== null}
+              onClick={() => handleClick(a)}
               className={cn(
                 "h-7 gap-1 text-xs",
                 isDestructive && "text-destructive hover:text-destructive",
                 isResend && "gap-1.5",
               )}
             >
-              {isResend ? <RefreshCw className="h-3 w-3" /> : <Icon className="h-3 w-3" />}
+              {isLoading ? (
+                <Loader2 className="h-3 w-3 animate-spin" />
+              ) : isResend ? (
+                <RefreshCw className="h-3 w-3" />
+              ) : (
+                <Icon className="h-3 w-3" />
+              )}
               {label}
             </Button>
           );
