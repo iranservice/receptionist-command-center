@@ -3,7 +3,7 @@
 // (loading / denied / not-found) based on auth + membership status.
 // Does NOT connect any feature data — only auth/tenant context.
 
-import { createFileRoute, Outlet, useParams } from "@tanstack/react-router";
+import { createFileRoute, Outlet, useParams, Link } from "@tanstack/react-router";
 import { AppShell } from "@/components/shell/AppShell";
 import { useAuth, useMembershipBySlug } from "@/lib/auth";
 import { LoadingState, DeniedState, ErrorState } from "@/components/state/UIState";
@@ -48,11 +48,18 @@ function TenantLayout() {
   // ── Not authenticated (real mode only) ──────────────────
   if (phase === "unauthenticated" && !isDemoMode) {
     return (
-      <div className="flex min-h-screen items-center justify-center bg-background">
+      <div className="flex min-h-screen flex-col items-center justify-center gap-4 bg-background">
         <DeniedState
           title="Sign in required"
           description="You need to sign in to access this workspace. Authentication is managed by the backend."
         />
+        <Link
+          to="/auth"
+          search={{ redirect: `/app/${tenant}/inbox` }}
+          className="inline-flex items-center justify-center rounded-md bg-primary px-4 py-2 text-sm font-medium text-primary-foreground transition-colors hover:bg-primary/90"
+        >
+          Sign in
+        </Link>
       </div>
     );
   }

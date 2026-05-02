@@ -3,7 +3,7 @@
 // In demo mode, always grants access (demo profile has super_admin).
 // Backend is source of truth for platform_role via user_profiles table.
 
-import { createFileRoute, Outlet } from "@tanstack/react-router";
+import { createFileRoute, Outlet, Link } from "@tanstack/react-router";
 import { AppShell } from "@/components/shell/AppShell";
 import { useAuth } from "@/lib/auth";
 import { LoadingState, DeniedState, ErrorState } from "@/components/state/UIState";
@@ -49,11 +49,18 @@ function PlatformLayout() {
   // ── Not authenticated (real mode only) ──────────────────
   if (phase === "unauthenticated" && !isDemoMode) {
     return (
-      <div className="flex min-h-screen items-center justify-center bg-background">
+      <div className="flex min-h-screen flex-col items-center justify-center gap-4 bg-background">
         <DeniedState
           title="Sign in required"
           description="You need to sign in to access platform operations."
         />
+        <Link
+          to="/auth"
+          search={{ redirect: "/platform" }}
+          className="inline-flex items-center justify-center rounded-md bg-primary px-4 py-2 text-sm font-medium text-primary-foreground transition-colors hover:bg-primary/90"
+        >
+          Sign in
+        </Link>
       </div>
     );
   }

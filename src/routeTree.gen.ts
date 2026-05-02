@@ -10,6 +10,7 @@
 
 import { Route as rootRouteImport } from './routes/__root'
 import { Route as PlatformRouteImport } from './routes/platform'
+import { Route as AuthRouteImport } from './routes/auth'
 import { Route as IndexRouteImport } from './routes/index'
 import { Route as PlatformIndexRouteImport } from './routes/platform.index'
 import { Route as PlatformTenantsRouteImport } from './routes/platform.tenants'
@@ -37,6 +38,11 @@ import { Route as AppTenantAnalyticsRouteImport } from './routes/app.$tenant.ana
 const PlatformRoute = PlatformRouteImport.update({
   id: '/platform',
   path: '/platform',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const AuthRoute = AuthRouteImport.update({
+  id: '/auth',
+  path: '/auth',
   getParentRoute: () => rootRouteImport,
 } as any)
 const IndexRoute = IndexRouteImport.update({
@@ -157,6 +163,7 @@ const AppTenantAnalyticsRoute = AppTenantAnalyticsRouteImport.update({
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
+  '/auth': typeof AuthRoute
   '/platform': typeof PlatformRouteWithChildren
   '/app/$tenant': typeof AppTenantRouteWithChildren
   '/platform/analytics': typeof PlatformAnalyticsRoute
@@ -183,6 +190,7 @@ export interface FileRoutesByFullPath {
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
+  '/auth': typeof AuthRoute
   '/platform/analytics': typeof PlatformAnalyticsRoute
   '/platform/members': typeof PlatformMembersRoute
   '/platform/plans': typeof PlatformPlansRoute
@@ -208,6 +216,7 @@ export interface FileRoutesByTo {
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
   '/': typeof IndexRoute
+  '/auth': typeof AuthRoute
   '/platform': typeof PlatformRouteWithChildren
   '/app/$tenant': typeof AppTenantRouteWithChildren
   '/platform/analytics': typeof PlatformAnalyticsRoute
@@ -236,6 +245,7 @@ export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
   fullPaths:
     | '/'
+    | '/auth'
     | '/platform'
     | '/app/$tenant'
     | '/platform/analytics'
@@ -262,6 +272,7 @@ export interface FileRouteTypes {
   fileRoutesByTo: FileRoutesByTo
   to:
     | '/'
+    | '/auth'
     | '/platform/analytics'
     | '/platform/members'
     | '/platform/plans'
@@ -286,6 +297,7 @@ export interface FileRouteTypes {
   id:
     | '__root__'
     | '/'
+    | '/auth'
     | '/platform'
     | '/app/$tenant'
     | '/platform/analytics'
@@ -313,6 +325,7 @@ export interface FileRouteTypes {
 }
 export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
+  AuthRoute: typeof AuthRoute
   PlatformRoute: typeof PlatformRouteWithChildren
   AppTenantRoute: typeof AppTenantRouteWithChildren
 }
@@ -324,6 +337,13 @@ declare module '@tanstack/react-router' {
       path: '/platform'
       fullPath: '/platform'
       preLoaderRoute: typeof PlatformRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/auth': {
+      id: '/auth'
+      path: '/auth'
+      fullPath: '/auth'
+      preLoaderRoute: typeof AuthRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/': {
@@ -554,6 +574,7 @@ const AppTenantRouteWithChildren = AppTenantRoute._addFileChildren(
 
 const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
+  AuthRoute: AuthRoute,
   PlatformRoute: PlatformRouteWithChildren,
   AppTenantRoute: AppTenantRouteWithChildren,
 }
