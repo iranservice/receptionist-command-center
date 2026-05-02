@@ -170,7 +170,7 @@ const actionRegistry: Record<OrderAction, ActionDescriptor> = {
 // Empty state
 // ---------------------------------------------------------------------------
 
-export function OrderPanelEmpty() {
+export function OrderPanelEmpty({ onCreateOrder }: { onCreateOrder?: () => void }) {
   return (
     <div className="px-4 py-5">
       <div className="rounded-lg border border-dashed bg-muted/30 px-4 py-6 text-center">
@@ -181,6 +181,16 @@ export function OrderPanelEmpty() {
         <p className="mx-auto mt-1 max-w-[240px] text-xs text-muted-foreground">
           When this conversation creates an order or reservation, it will appear here.
         </p>
+        {onCreateOrder && (
+          <Button
+            variant="outline"
+            size="sm"
+            className="mt-3 gap-1.5 text-xs"
+            onClick={onCreateOrder}
+          >
+            <ShoppingBag className="h-3 w-3" /> Create order
+          </Button>
+        )}
         <p className="mt-2 text-[10px] text-muted-foreground">
           Order creation is performed by the backend (AI workflow or operator action).
         </p>
@@ -244,9 +254,11 @@ function OrderTabs({
 export function OrderPanel({
   orders,
   actionHandlers,
+  onCreateOrder,
 }: {
   orders: LinkedOrder[] | undefined;
   actionHandlers?: OrderActionHandlers;
+  onCreateOrder?: () => void;
 }) {
   const list = orders ?? [];
   const [selectedId, setSelectedId] = useState<string>(list[0]?.id ?? "");
@@ -256,7 +268,7 @@ export function OrderPanel({
     return (
       <div>
         <SectionHeader title="Linked order" />
-        <OrderPanelEmpty />
+        <OrderPanelEmpty onCreateOrder={onCreateOrder} />
       </div>
     );
   }

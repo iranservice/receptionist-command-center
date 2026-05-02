@@ -116,6 +116,8 @@ export type Customer = {
 
 export type Conversation = {
   id: string;
+  /** Backend customer UUID — used for mutations like create_order. */
+  customerId?: string;
   customer: Customer;
   channel: Channel;
   status: ConversationStatus;

@@ -1,8 +1,8 @@
-// Phase V-B — Inbox page wired to backend RPCs.
+// Phase VI-A — Inbox page wired to backend RPCs.
 // Loads inbox list from get_inbox_list().
 // Loads conversation detail from get_conversation_detail().
 // Operator mutations wired: reply, assign, unassign, transfer, release-to-AI.
-// Order mutations wired: confirm, cancel, request customer confirmation.
+// Order mutations wired: create, confirm, cancel, request customer confirmation.
 // Falls back to demo data when Supabase is not configured.
 
 import { useCallback, useEffect, useMemo, useState } from "react";
@@ -33,6 +33,8 @@ import {
   PanelRight,
   RefreshCw,
   Loader2,
+  Plus,
+  Trash2,
 } from "lucide-react";
 import { conversations as demoConversations, type Conversation } from "@/lib/inbox-data";
 import { StatusBadge, ChannelBadge, OwnerBadge } from "@/components/inbox/state-badges";
@@ -71,8 +73,10 @@ import {
   requestCustomerConfirmation,
   confirmOrder,
   cancelOrder,
+  createOrder,
   isOrderActionError,
   getOrderErrorMessage,
+  type CreateOrderInput,
 } from "@/lib/api/order-actions";
 import type { OrderActionHandlers } from "@/components/inbox/OrderPanel";
 import { fetchBusinessMembers, type BusinessMemberRow } from "@/lib/api/members";
@@ -523,6 +527,50 @@ function InboxPage() {
     [handleRequestConfirmation, handleConfirmOrder, handleCancelOrder],
   );
 
+  // ── Create order handler ───────────────────────────────────
+  const [createOrderOpen, setCreateOrderOpen] = useState(false);
+
+  const handleOpenCreateOrder = useCallback(() => {
+    if (useDemo) {
+      toast.info("Demo mode — action not available.");
+      return;
+    }
+    if (!selected?.customerId) {
+      toast.error("Cannot create order: customer information is missing.");
+      return;
+    }
+    if (!businessId) {
+      toast.error("Cannot create order: workspace context is missing.");
+      return;
+    }
+    setCreateOrderOpen(true);
+  }, [useDemo, selected, businessId]);
+
+  const handleCreateOrderSubmit = useCallback(
+    async (input: CreateOrderInput) => {
+      const result = await createOrder(input);
+      if (result.error) {
+        toast.error(result.error);
+        return;
+      }
+      if (result.data && isOrderActionError(result.data)) {
+        // Surface missing_fields if backend provides them
+        const errData = result.data as unknown as Record<string, unknown>;
+        const missingFields = errData.missing_fields;
+        if (Array.isArray(missingFields) && missingFields.length > 0) {
+          toast.error(`Missing required fields: ${missingFields.join(", ")}`);
+        } else {
+          toast.error(getOrderErrorMessage(result.data.error));
+        }
+        return;
+      }
+      toast.success("Order created as draft.");
+      setCreateOrderOpen(false);
+      refreshAfterAction();
+    },
+    [refreshAfterAction],
+  );
+
   // ── Access denied ────────────────────────────────────────
   if (listError === "ACCESS_DENIED") {
     return (
@@ -780,6 +828,7 @@ function InboxPage() {
               conversation={selected}
               actions={ownershipActions}
               orderActionHandlers={orderActionHandlers}
+              onCreateOrder={handleOpenCreateOrder}
             />
           ) : (
             <EmptyState size="sm" title="No conversation selected" />
@@ -796,12 +845,25 @@ function InboxPage() {
               conversation={selected}
               actions={ownershipActions}
               orderActionHandlers={orderActionHandlers}
+              onCreateOrder={handleOpenCreateOrder}
             />
           ) : (
             <EmptyState size="sm" title="No conversation selected" />
           )}
         </SheetContent>
       </Sheet>
+
+      {/* Create order dialog */}
+      {selected && businessId && selected.customerId && (
+        <CreateOrderDialog
+          open={createOrderOpen}
+          onOpenChange={setCreateOrderOpen}
+          onSubmit={handleCreateOrderSubmit}
+          businessId={businessId}
+          customerId={selected.customerId}
+          conversationId={selected.id}
+        />
+      )}
 
       {/* Cancel order dialog */}
       <CancelOrderDialog
@@ -1087,6 +1149,257 @@ function CancelOrderDialog({
               </>
             ) : (
               "Cancel order"
+            )}
+          </Button>
+        </DialogFooter>
+      </DialogContent>
+    </Dialog>
+  );
+}
+
+// ── Create Order Dialog ─────────────────────────────────────
+
+type OrderItemDraft = {
+  item_name: string;
+  quantity: number;
+  unit_price: string; // Keep as string for safe input handling
+  notes: string;
+};
+
+const emptyItem = (): OrderItemDraft => ({
+  item_name: "",
+  quantity: 1,
+  unit_price: "",
+  notes: "",
+});
+
+function CreateOrderDialog({
+  open,
+  onOpenChange,
+  onSubmit,
+  businessId,
+  customerId,
+  conversationId,
+}: {
+  open: boolean;
+  onOpenChange: (open: boolean) => void;
+  onSubmit: (input: CreateOrderInput) => Promise<void>;
+  businessId: string;
+  customerId: string;
+  conversationId: string;
+}) {
+  const [orderType, setOrderType] = useState<"dine_in" | "takeaway" | "delivery">("dine_in");
+  const [items, setItems] = useState<OrderItemDraft[]>([emptyItem()]);
+  const [deliveryAddress, setDeliveryAddress] = useState("");
+  const [notes, setNotes] = useState("");
+  const [submitting, setSubmitting] = useState(false);
+
+  const updateItem = (index: number, field: keyof OrderItemDraft, value: string | number) => {
+    setItems((prev) => prev.map((item, i) => (i === index ? { ...item, [field]: value } : item)));
+  };
+
+  const addItem = () => setItems((prev) => [...prev, emptyItem()]);
+
+  const removeItem = (index: number) => {
+    if (items.length <= 1) return;
+    setItems((prev) => prev.filter((_, i) => i !== index));
+  };
+
+  const resetForm = () => {
+    setOrderType("dine_in");
+    setItems([emptyItem()]);
+    setDeliveryAddress("");
+    setNotes("");
+  };
+
+  const isValid =
+    items.length > 0 &&
+    items.every((item) => item.item_name.trim() !== "" && item.quantity > 0) &&
+    (orderType !== "delivery" || deliveryAddress.trim() !== "");
+
+  const handleSubmit = async () => {
+    if (!isValid || submitting) return;
+    setSubmitting(true);
+    try {
+      await onSubmit({
+        businessId,
+        customerId,
+        conversationId,
+        orderType,
+        items: items.map((item) => ({
+          item_name: item.item_name.trim(),
+          quantity: item.quantity,
+          unit_price: item.unit_price ? parseFloat(item.unit_price) || null : null,
+          notes: item.notes.trim() || undefined,
+        })),
+        deliveryAddress: orderType === "delivery" ? deliveryAddress.trim() : null,
+        notes: notes.trim() || null,
+      });
+      // Form resets via onOpenChange when dialog closes after success
+    } finally {
+      setSubmitting(false);
+    }
+  };
+
+  return (
+    <Dialog
+      open={open}
+      onOpenChange={(isOpen) => {
+        onOpenChange(isOpen);
+        if (!isOpen) resetForm();
+      }}
+    >
+      <DialogContent className="max-h-[85vh] overflow-y-auto sm:max-w-lg">
+        <DialogHeader>
+          <DialogTitle>Create order</DialogTitle>
+          <DialogDescription>
+            Create a draft order for this conversation. The order will be saved as a draft for
+            review before confirmation.
+          </DialogDescription>
+        </DialogHeader>
+
+        <div className="space-y-4 py-2">
+          {/* Order type */}
+          <div className="space-y-2">
+            <Label htmlFor="order-type">Order type</Label>
+            <select
+              id="order-type"
+              value={orderType}
+              onChange={(e) => setOrderType(e.target.value as "dine_in" | "takeaway" | "delivery")}
+              className="flex h-9 w-full rounded-md border border-input bg-transparent px-3 py-1 text-sm shadow-sm transition-colors focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring"
+            >
+              <option value="dine_in">Dine-in</option>
+              <option value="takeaway">Pickup / Takeaway</option>
+              <option value="delivery">Delivery</option>
+            </select>
+          </div>
+
+          {/* Delivery address — only for delivery */}
+          {orderType === "delivery" && (
+            <div className="space-y-2">
+              <Label htmlFor="delivery-address">
+                Delivery address <span className="text-destructive">*</span>
+              </Label>
+              <Input
+                id="delivery-address"
+                value={deliveryAddress}
+                onChange={(e) => setDeliveryAddress(e.target.value)}
+                placeholder="e.g. 123 Main St, Apt 4B"
+              />
+            </div>
+          )}
+
+          {/* Items */}
+          <div className="space-y-2">
+            <div className="flex items-center justify-between">
+              <Label>
+                Items <span className="text-destructive">*</span>
+              </Label>
+              <Button
+                type="button"
+                variant="ghost"
+                size="sm"
+                className="h-7 gap-1 px-2 text-xs"
+                onClick={addItem}
+              >
+                <Plus className="h-3 w-3" /> Add item
+              </Button>
+            </div>
+            <div className="space-y-3">
+              {items.map((item, idx) => (
+                <div key={idx} className="rounded-md border bg-muted/30 p-3">
+                  <div className="flex items-start gap-2">
+                    <div className="min-w-0 flex-1 space-y-2">
+                      <Input
+                        value={item.item_name}
+                        onChange={(e) => updateItem(idx, "item_name", e.target.value)}
+                        placeholder="Item name *"
+                        className="h-8 text-sm"
+                      />
+                      <div className="flex gap-2">
+                        <div className="w-20">
+                          <Input
+                            type="number"
+                            min={1}
+                            value={item.quantity}
+                            onChange={(e) =>
+                              updateItem(
+                                idx,
+                                "quantity",
+                                Math.max(1, parseInt(e.target.value) || 1),
+                              )
+                            }
+                            placeholder="Qty"
+                            className="h-8 text-sm"
+                          />
+                        </div>
+                        <div className="w-28">
+                          <Input
+                            type="number"
+                            step="0.01"
+                            min={0}
+                            value={item.unit_price}
+                            onChange={(e) => updateItem(idx, "unit_price", e.target.value)}
+                            placeholder="Unit price"
+                            className="h-8 text-sm"
+                          />
+                        </div>
+                        <div className="min-w-0 flex-1">
+                          <Input
+                            value={item.notes}
+                            onChange={(e) => updateItem(idx, "notes", e.target.value)}
+                            placeholder="Notes"
+                            className="h-8 text-sm"
+                          />
+                        </div>
+                      </div>
+                    </div>
+                    {items.length > 1 && (
+                      <Button
+                        type="button"
+                        variant="ghost"
+                        size="sm"
+                        className="h-8 w-8 shrink-0 p-0 text-muted-foreground hover:text-destructive"
+                        onClick={() => removeItem(idx)}
+                      >
+                        <Trash2 className="h-3.5 w-3.5" />
+                      </Button>
+                    )}
+                  </div>
+                </div>
+              ))}
+            </div>
+          </div>
+
+          {/* Order notes */}
+          <div className="space-y-2">
+            <Label htmlFor="order-notes">Order notes (optional)</Label>
+            <Textarea
+              id="order-notes"
+              value={notes}
+              onChange={(e) => setNotes(e.target.value)}
+              placeholder="e.g. No onions, extra sauce"
+              rows={2}
+            />
+          </div>
+
+          <p className="text-[10px] text-muted-foreground">
+            Order will be created as <span className="font-medium">draft</span>. Use order actions
+            to send confirmation or finalize.
+          </p>
+        </div>
+
+        <DialogFooter>
+          <Button variant="outline" onClick={() => onOpenChange(false)}>
+            Cancel
+          </Button>
+          <Button onClick={handleSubmit} disabled={!isValid || submitting}>
+            {submitting ? (
+              <>
+                <Loader2 className="mr-1.5 h-3.5 w-3.5 animate-spin" /> Creating…
+              </>
+            ) : (
+              "Create draft order"
             )}
           </Button>
         </DialogFooter>

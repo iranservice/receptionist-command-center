@@ -1,8 +1,8 @@
-// Phase V-B — Order action mutation RPCs.
-// Wraps confirm_order, cancel_order, request_customer_confirmation,
+// Phase VI-A — Order action mutation RPCs.
+// Wraps create_order, confirm_order, cancel_order, request_customer_confirmation,
 // and get_order_confirmation_payload.
 // Uses existing rpc() client from ./client.ts — never creates a second Supabase client.
-// Does NOT wire: create_order, execute_create_order_action, edit_order.
+// Does NOT wire: execute_create_order_action, edit_order.
 
 import { rpc, type RpcResult } from "./client";
 
@@ -13,6 +13,29 @@ export interface OrderTransitionResult {
   order_id: string;
   from_status: string;
   to_status: string;
+}
+
+/** Backend response for create_order. */
+export interface CreateOrderResult {
+  order_id: string;
+  order_number: string;
+  status: string;
+}
+
+/** Input for createOrder — matches backend create_order() params exactly. */
+export interface CreateOrderInput {
+  businessId: string;
+  customerId: string;
+  conversationId: string;
+  orderType: "dine_in" | "takeaway" | "delivery";
+  items: Array<{
+    item_name: string;
+    quantity: number;
+    unit_price?: number | null;
+    notes?: string;
+  }>;
+  deliveryAddress?: string | null;
+  notes?: string | null;
 }
 
 /** Backend response for get_order_confirmation_payload. */
@@ -61,13 +84,14 @@ export function isOrderActionError(data: unknown): data is OrderActionError {
 
 const orderErrorMessages: Record<string, string> = {
   ORDER_NOT_FOUND: "Order not found.",
-  PERMISSION_DENIED: "You do not have permission to update this order.",
+  PERMISSION_DENIED: "You do not have permission to perform this order action.",
   ACCESS_DENIED: "Access denied.",
   INVALID_TRANSITION: "This order cannot move to that status.",
   INVALID_STATUS: "This order is not in the correct status for this action.",
-  MISSING_REQUIRED_FIELDS: "This order is missing required fields.",
+  MISSING_REQUIRED_FIELDS: "Some required order fields are missing.",
   CONVERSATION_NOT_FOUND: "Conversation not found.",
   CUSTOMER_NOT_FOUND: "Customer not found.",
+  VALIDATION_ERROR: "Order validation failed. Please check your input.",
 };
 
 /** Map a backend order error code to a user-friendly message. */
@@ -128,4 +152,30 @@ export async function cancelOrder(
     params.p_reason = reason;
   }
   return rpc<OrderTransitionResult | OrderActionError>("cancel_order", params);
+}
+
+/**
+ * Create a new order linked to a conversation.
+ * Backend: create_order(p_business_id, p_customer_id, p_items, p_order_type,
+ *   p_conversation_id, p_delivery_address, p_notes, p_source, p_initial_status)
+ */
+export async function createOrder(
+  input: CreateOrderInput,
+): Promise<RpcResult<CreateOrderResult | OrderActionError>> {
+  const params: Record<string, unknown> = {
+    p_business_id: input.businessId,
+    p_customer_id: input.customerId,
+    p_items: input.items,
+    p_order_type: input.orderType,
+    p_conversation_id: input.conversationId,
+    p_source: "operator",
+    p_initial_status: "draft",
+  };
+  if (input.deliveryAddress) {
+    params.p_delivery_address = { address: input.deliveryAddress };
+  }
+  if (input.notes) {
+    params.p_notes = input.notes;
+  }
+  return rpc<CreateOrderResult | OrderActionError>("create_order", params);
 }

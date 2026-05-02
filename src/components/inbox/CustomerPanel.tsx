@@ -52,10 +52,12 @@ export function CustomerPanel({
   conversation,
   actions,
   orderActionHandlers,
+  onCreateOrder,
 }: {
   conversation: Conversation;
   actions?: OwnershipActions;
   orderActionHandlers?: OrderActionHandlers;
+  onCreateOrder?: () => void;
 }) {
   const c = conversation.customer;
   // Prefer the multi-order list if present, fall back to the single linked order.
@@ -216,7 +218,11 @@ export function CustomerPanel({
       </Section>
 
       {/* Linked order — LV-4 enhanced panel */}
-      <OrderPanel orders={orders} actionHandlers={orderActionHandlers} />
+      <OrderPanel
+        orders={orders}
+        actionHandlers={orderActionHandlers}
+        onCreateOrder={onCreateOrder}
+      />
 
       {/* Tags & notes */}
       <Section

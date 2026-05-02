@@ -230,6 +230,7 @@ export function mapDetailToConversation(
 
   return {
     id: conv.id,
+    customerId: cust.id,
     customer,
     channel: mapChannel(conv.channel_type),
     status: frontendStatus,
