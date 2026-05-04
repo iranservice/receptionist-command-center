@@ -39,6 +39,12 @@ export interface ReleaseToAIResult {
   status: "open";
   ai_enabled: true;
   event_type: "released_to_ai";
+  ai_reply?: {
+    message_id: string;
+    delivery_status: string;
+    decision: string;
+    provider: string;
+  };
 }
 
 /** Backend error payload shape for all mutation RPCs. */
@@ -140,13 +146,13 @@ export async function transferConversation(
 }
 
 /**
- * Release a conversation back to AI control.
- * Backend: release_to_ai(p_conversation_id)
+ * Release a conversation back to AI control and generate an immediate stub reply.
+ * Backend: release_to_ai_with_reply(p_conversation_id)
  */
 export async function releaseConversationToAI(
   conversationId: string,
 ): Promise<RpcResult<ReleaseToAIResult | ActionError>> {
-  return rpc<ReleaseToAIResult | ActionError>("release_to_ai", {
+  return rpc<ReleaseToAIResult | ActionError>("release_to_ai_with_reply", {
     p_conversation_id: conversationId,
   });
 }
