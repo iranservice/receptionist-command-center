@@ -1,3 +1,7 @@
+// Phase II — Tenant-scoped business settings.
+// Reads settings from the data adapter, respects workspace context,
+// shows role-based affordances. Forms are demo-safe (no real persistence).
+
 import { createFileRoute, Link, useParams } from "@tanstack/react-router";
 import { useState } from "react";
 import { PageHeader } from "@/components/shell/PageHeader";
@@ -26,9 +30,12 @@ import {
   Save,
   Rocket,
   AlertTriangle,
+  Info,
 } from "lucide-react";
-import { demoTenants } from "@/lib/nav-config";
 import { businessTypes, getBusinessType, type BusinessTypeId } from "@/lib/business-types";
+import { useWorkspace } from "@/lib/workspace";
+import { getBusinessSettings } from "@/data/settings-data";
+import type { BusinessSettings, BusinessStatus } from "@/data/types";
 
 export const Route = createFileRoute("/app/$tenant/settings")({
   head: () => ({ meta: [{ title: "Settings · Workspace" }] }),
@@ -46,41 +53,67 @@ const tabs = [
 
 type TabId = (typeof tabs)[number]["id"];
 
+// ── Status badge ────────────────────────────────────────────
+
+const statusConfig: Record<BusinessStatus, { label: string; className: string }> = {
+  active: { label: "Active", className: "bg-success/15 text-success" },
+  setup_required: { label: "Setup required", className: "bg-warn/25 text-warn-foreground" },
+  paused: { label: "Paused", className: "bg-muted text-muted-foreground" },
+};
+
 function TenantSettings() {
   const { tenant } = useParams({ from: "/app/$tenant/settings" });
-  const t = demoTenants.find((x) => x.slug === tenant) ?? demoTenants[0];
+  const { role } = useWorkspace();
+  const isAdmin = role === "business_admin" || role === "super_admin";
+
+  // Load settings from data adapter — tenant-scoped
+  const settings = getBusinessSettings(tenant);
+  const displayName = settings?.name ?? tenant;
   const [active, setActive] = useState<TabId>("profile");
-  const [businessType, setBusinessType] = useState<BusinessTypeId>("restaurant");
+  const [businessType, setBusinessType] = useState<BusinessTypeId>(
+    settings?.businessType ?? "restaurant",
+  );
   const bt = getBusinessType(businessType);
+  const status = settings?.status ?? "active";
+  const statusInfo = statusConfig[status];
 
   return (
     <>
       <PageHeader
         title="Settings"
-        description="Workspace settings for this tenant business. Frontend collects intent — backend is the source of truth."
+        description={`Business settings for ${displayName}. Frontend collects intent — backend is the source of truth.`}
         meta={
           <>
             <Badge
               variant="secondary"
               className="h-5 border-0 bg-level-b/12 px-1.5 text-[10px] font-medium text-level-b"
             >
-              Level B · {t.name}
+              Level B · {displayName}
             </Badge>
             <Badge variant="outline" className="font-normal">
               {bt.label}
+            </Badge>
+            <Badge className={`border-0 font-normal ${statusInfo.className}`}>
+              {statusInfo.label}
             </Badge>
           </>
         }
         actions={
           <>
             <Button asChild size="sm" variant="outline" className="gap-1.5">
-              <Link to="/app/$tenant/setup" params={{ tenant: t.slug }}>
+              <Link to="/app/$tenant/setup" params={{ tenant }}>
                 <Rocket className="h-3.5 w-3.5" /> Re-run setup
               </Link>
             </Button>
-            <Button size="sm" className="gap-1.5">
-              <Save className="h-3.5 w-3.5" /> Save changes
-            </Button>
+            {isAdmin ? (
+              <Button size="sm" className="gap-1.5">
+                <Save className="h-3.5 w-3.5" /> Save changes
+              </Button>
+            ) : (
+              <Badge variant="outline" className="gap-1.5 font-normal text-muted-foreground">
+                <Info className="h-3 w-3" /> View only
+              </Badge>
+            )}
           </>
         }
       />
@@ -114,19 +147,27 @@ function TenantSettings() {
         </aside>
 
         <div className="min-w-0 space-y-5">
-          {active === "profile" && <ProfileTab tenantName={t.name} />}
-          {active === "hours" && <HoursTab />}
-          {active === "service" && <ServiceTab />}
-          {active === "ai" && <AITab />}
-          {active === "localization" && <LocalizationTab />}
-          {active === "module" && <ModuleTab value={businessType} onChange={setBusinessType} />}
+          {active === "profile" && <ProfileTab settings={settings} isAdmin={isAdmin} />}
+          {active === "hours" && <HoursTab settings={settings} isAdmin={isAdmin} />}
+          {active === "service" && <ServiceTab isAdmin={isAdmin} />}
+          {active === "ai" && <AITab settings={settings} isAdmin={isAdmin} />}
+          {active === "localization" && <LocalizationTab settings={settings} isAdmin={isAdmin} />}
+          {active === "module" && (
+            <ModuleTab value={businessType} onChange={setBusinessType} isAdmin={isAdmin} />
+          )}
         </div>
       </div>
     </>
   );
 }
 
-function ProfileTab({ tenantName }: { tenantName: string }) {
+function ProfileTab({
+  settings,
+  isAdmin,
+}: {
+  settings: BusinessSettings | null;
+  isAdmin: boolean;
+}) {
   return (
     <SettingsSection
       scope="Level B"
@@ -135,27 +176,44 @@ function ProfileTab({ tenantName }: { tenantName: string }) {
     >
       <div className="grid gap-5 sm:grid-cols-2">
         <SettingsField label="Business name">
-          <Input defaultValue={tenantName} />
+          <Input defaultValue={settings?.name ?? ""} disabled={!isAdmin} />
+        </SettingsField>
+        <SettingsField label="Public display name">
+          <Input defaultValue={settings?.publicDisplayName ?? ""} disabled={!isAdmin} />
         </SettingsField>
         <SettingsField label="Public phone">
-          <Input placeholder="+1 555 010 1234" />
+          <Input
+            placeholder="+1 555 010 1234"
+            defaultValue={settings?.phone ?? ""}
+            disabled={!isAdmin}
+          />
         </SettingsField>
         <SettingsField label="Public email">
-          <Input type="email" placeholder="hello@business.com" />
+          <Input
+            type="email"
+            placeholder="hello@business.com"
+            defaultValue={settings?.email ?? ""}
+            disabled={!isAdmin}
+          />
         </SettingsField>
         <SettingsField label="Logo">
           <div className="flex items-center gap-3">
             <div className="flex h-10 w-10 items-center justify-center rounded-md border border-dashed bg-muted/40 text-muted-foreground">
               <Building2 className="h-4 w-4" />
             </div>
-            <Button type="button" size="sm" variant="outline">
+            <Button type="button" size="sm" variant="outline" disabled={!isAdmin}>
               Upload
             </Button>
           </div>
         </SettingsField>
         <div className="sm:col-span-2">
           <SettingsField label="Address">
-            <Textarea rows={2} placeholder="Street, city, postal code, country" />
+            <Textarea
+              rows={2}
+              placeholder="Street, city, postal code, country"
+              defaultValue={settings?.address ?? ""}
+              disabled={!isAdmin}
+            />
           </SettingsField>
         </div>
       </div>
@@ -165,13 +223,23 @@ function ProfileTab({ tenantName }: { tenantName: string }) {
 }
 
 const days = ["Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun"];
-function HoursTab() {
+
+function HoursTab({ settings, isAdmin }: { settings: BusinessSettings | null; isAdmin: boolean }) {
   return (
     <SettingsSection
       scope="Level B"
       title="Working hours"
       description="Off-hours can route to the AI receptionist automatically."
     >
+      {settings?.operatingHoursSummary && (
+        <div className="mb-4 flex items-center gap-2 rounded-md border bg-muted/30 px-3 py-2 text-xs text-muted-foreground">
+          <Clock className="h-3.5 w-3.5 shrink-0" />
+          <span>
+            Current schedule:{" "}
+            <strong className="text-foreground">{settings.operatingHoursSummary}</strong>
+          </span>
+        </div>
+      )}
       <div className="overflow-hidden rounded-md border">
         {days.map((d, i) => (
           <div
@@ -184,10 +252,10 @@ function HoursTab() {
               .join(" ")}
           >
             <span className="font-medium">{d}</span>
-            <Input type="time" defaultValue="09:00" disabled={d === "Sun"} />
-            <Input type="time" defaultValue="22:00" disabled={d === "Sun"} />
+            <Input type="time" defaultValue="09:00" disabled={d === "Sun" || !isAdmin} />
+            <Input type="time" defaultValue="22:00" disabled={d === "Sun" || !isAdmin} />
             <label className="flex items-center justify-end gap-1.5 text-[11px] text-muted-foreground">
-              <Checkbox defaultChecked={d === "Sun"} /> Closed
+              <Checkbox defaultChecked={d === "Sun"} disabled={!isAdmin} /> Closed
             </label>
           </div>
         ))}
@@ -196,7 +264,7 @@ function HoursTab() {
   );
 }
 
-function ServiceTab() {
+function ServiceTab({ isAdmin }: { isAdmin: boolean }) {
   return (
     <SettingsSection
       scope="Level B"
@@ -205,7 +273,7 @@ function ServiceTab() {
     >
       <div className="grid gap-5 sm:grid-cols-2">
         <SettingsField label="Mode">
-          <Select defaultValue="hybrid">
+          <Select defaultValue="hybrid" disabled={!isAdmin}>
             <SelectTrigger>
               <SelectValue />
             </SelectTrigger>
@@ -217,7 +285,7 @@ function ServiceTab() {
           </Select>
         </SettingsField>
         <SettingsField label="Radius (km)">
-          <Input type="number" defaultValue={5} min={0} />
+          <Input type="number" defaultValue={5} min={0} disabled={!isAdmin} />
         </SettingsField>
       </div>
       <div className="mt-4 flex items-center gap-3 rounded-md border border-dashed bg-muted/30 px-4 py-6 text-xs text-muted-foreground">
@@ -228,7 +296,7 @@ function ServiceTab() {
   );
 }
 
-function AITab() {
+function AITab({ settings, isAdmin }: { settings: BusinessSettings | null; isAdmin: boolean }) {
   return (
     <SettingsSection
       scope="Level B"
@@ -239,16 +307,20 @@ function AITab() {
         <ToggleRow
           title="AI replies enabled"
           desc="Master toggle — backend enforces channel-level overrides."
-          defaultOn
+          defaultOn={settings?.aiPolicyEnabled ?? true}
+          disabled={!isAdmin}
         />
         <ToggleRow
           title="Auto-handoff to operator on low confidence"
           desc="Threshold and triggers configured server-side."
-          defaultOn
+          defaultOn={settings?.escalationPolicyEnabled ?? true}
+          disabled={!isAdmin}
         />
         <ToggleRow
           title="Require operator approval for outbound orders"
           desc="Approval-vs-confirmation truth lives in the backend."
+          defaultOn={settings?.customerConfirmationRequired ?? false}
+          disabled={!isAdmin}
         />
       </div>
       <BackendNote>
@@ -258,7 +330,13 @@ function AITab() {
   );
 }
 
-function LocalizationTab() {
+function LocalizationTab({
+  settings,
+  isAdmin,
+}: {
+  settings: BusinessSettings | null;
+  isAdmin: boolean;
+}) {
   return (
     <SettingsSection
       scope="Level B"
@@ -267,7 +345,7 @@ function LocalizationTab() {
     >
       <div className="grid gap-5 sm:grid-cols-2">
         <SettingsField label="Default language">
-          <Select defaultValue="en">
+          <Select defaultValue={settings?.language ?? "en"} disabled={!isAdmin}>
             <SelectTrigger>
               <SelectValue />
             </SelectTrigger>
@@ -280,15 +358,16 @@ function LocalizationTab() {
           </Select>
         </SettingsField>
         <SettingsField label="Time zone">
-          <Select defaultValue="auto">
+          <Select defaultValue={settings?.timezone ?? "auto"} disabled={!isAdmin}>
             <SelectTrigger>
               <SelectValue />
             </SelectTrigger>
             <SelectContent>
               <SelectItem value="auto">Auto-detect</SelectItem>
-              <SelectItem value="utc">UTC</SelectItem>
-              <SelectItem value="eu">Europe / Istanbul</SelectItem>
-              <SelectItem value="us">America / New York</SelectItem>
+              <SelectItem value="UTC">UTC</SelectItem>
+              <SelectItem value="Europe/Istanbul">Europe / Istanbul</SelectItem>
+              <SelectItem value="Europe/London">Europe / London</SelectItem>
+              <SelectItem value="America/New_York">America / New York</SelectItem>
             </SelectContent>
           </Select>
         </SettingsField>
@@ -300,9 +379,11 @@ function LocalizationTab() {
 function ModuleTab({
   value,
   onChange,
+  isAdmin,
 }: {
   value: BusinessTypeId;
   onChange: (v: BusinessTypeId) => void;
+  isAdmin: boolean;
 }) {
   const bt = getBusinessType(value);
   return (
@@ -311,7 +392,11 @@ function ModuleTab({
       title="Business type & module"
       description="Restaurant fields are an extension of a generic business model."
       action={
-        <Select value={value} onValueChange={(v) => onChange(v as BusinessTypeId)}>
+        <Select
+          value={value}
+          onValueChange={(v) => onChange(v as BusinessTypeId)}
+          disabled={!isAdmin}
+        >
           <SelectTrigger className="w-[200px]">
             <SelectValue />
           </SelectTrigger>
@@ -335,7 +420,7 @@ function ModuleTab({
           </div>
           <div className="grid gap-5 sm:grid-cols-2">
             <SettingsField label="Menu source">
-              <Select defaultValue="manual">
+              <Select defaultValue="manual" disabled={!isAdmin}>
                 <SelectTrigger>
                   <SelectValue />
                 </SelectTrigger>
@@ -347,7 +432,7 @@ function ModuleTab({
               </Select>
             </SettingsField>
             <SettingsField label="Reservations">
-              <Select defaultValue="enabled">
+              <Select defaultValue="enabled" disabled={!isAdmin}>
                 <SelectTrigger>
                   <SelectValue />
                 </SelectTrigger>
@@ -359,7 +444,11 @@ function ModuleTab({
             </SettingsField>
           </div>
           <SettingsField label="Menu / setup notes">
-            <Textarea rows={3} placeholder="Notes for AI context — backend owns the source." />
+            <Textarea
+              rows={3}
+              placeholder="Notes for AI context — backend owns the source."
+              disabled={!isAdmin}
+            />
           </SettingsField>
         </div>
       ) : (
@@ -377,10 +466,12 @@ function ToggleRow({
   title,
   desc,
   defaultOn = false,
+  disabled = false,
 }: {
   title: string;
   desc: string;
   defaultOn?: boolean;
+  disabled?: boolean;
 }) {
   return (
     <div className="flex items-start justify-between gap-4 rounded-md border bg-card px-4 py-3">
@@ -388,7 +479,7 @@ function ToggleRow({
         <p className="text-sm font-medium">{title}</p>
         <p className="text-xs text-muted-foreground">{desc}</p>
       </div>
-      <Switch defaultChecked={defaultOn} />
+      <Switch defaultChecked={defaultOn} disabled={disabled} />
     </div>
   );
 }

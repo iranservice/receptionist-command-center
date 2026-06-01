@@ -1,5 +1,9 @@
+// Phase II — Tenant-scoped members & teams management.
+// Reads member data from the data adapter, respects workspace context,
+// shows role-based affordances. Actions are demo-safe.
+
 import { createFileRoute } from "@tanstack/react-router";
-import { useMemo, useState } from "react";
+import { useMemo, useState, useCallback } from "react";
 import { PageHeader } from "@/components/shell/PageHeader";
 import { Card } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
@@ -47,100 +51,44 @@ import {
   Mail,
   Shield,
   Filter,
+  Info,
 } from "lucide-react";
+import { useWorkspace } from "@/lib/workspace";
+import { useAuth } from "@/lib/auth";
+import {
+  getBusinessMembers,
+  getCurrentUserMember,
+  canManageMember,
+  roleLabels,
+  roleStyles,
+  statusLabels,
+  statusStyles,
+} from "@/data/members-data";
+import type { BusinessMember, BusinessRole, MemberStatus } from "@/data/types";
+import { formatDistanceToNow } from "date-fns";
 
 export const Route = createFileRoute("/app/$tenant/members")({
   head: () => ({ meta: [{ title: "Members & Teams · Workspace" }] }),
   component: MembersPage,
 });
 
-type Status = "active" | "invited" | "inactive";
-type MemberRole = "Business Admin" | "Operator" | "Viewer";
-type Member = {
-  id: string;
-  name: string;
-  email: string;
-  role: MemberRole;
-  team: string;
-  status: Status;
-};
-
-const seed: Member[] = [
-  {
-    id: "1",
-    name: "Maya Holloway",
-    email: "maya@bella.com",
-    role: "Business Admin",
-    team: "Front of house",
-    status: "active",
-  },
-  {
-    id: "2",
-    name: "Diego Romero",
-    email: "diego@bella.com",
-    role: "Operator",
-    team: "Front of house",
-    status: "active",
-  },
-  {
-    id: "3",
-    name: "Aiko Tanaka",
-    email: "aiko@bella.com",
-    role: "Operator",
-    team: "Kitchen",
-    status: "active",
-  },
-  {
-    id: "4",
-    name: "Henrik Solberg",
-    email: "henrik@bella.com",
-    role: "Operator",
-    team: "Delivery",
-    status: "invited",
-  },
-  {
-    id: "5",
-    name: "Priya Shah",
-    email: "priya@bella.com",
-    role: "Viewer",
-    team: "Front of house",
-    status: "inactive",
-  },
-  {
-    id: "6",
-    name: "Lucas Mendez",
-    email: "lucas@bella.com",
-    role: "Operator",
-    team: "Delivery",
-    status: "active",
-  },
-];
-
-const teams = [
-  { id: "fh", name: "Front of house", desc: "Phones, chat, host stand.", count: 3 },
-  { id: "kt", name: "Kitchen", desc: "Order acknowledgement and timing.", count: 1 },
-  { id: "dv", name: "Delivery", desc: "Drivers and dispatch.", count: 2 },
-];
-
-const statusStyle: Record<Status, string> = {
-  active: "bg-success/15 text-success",
-  invited: "bg-warn/25 text-warn-foreground",
-  inactive: "bg-muted text-muted-foreground",
-};
-
-const roleStyle: Record<MemberRole, string> = {
-  "Business Admin": "bg-level-b/12 text-level-b",
-  Operator: "bg-operator/20 text-operator-foreground",
-  Viewer: "bg-muted text-muted-foreground",
-};
-
 function MembersPage() {
+  const { tenant } = Route.useParams();
+  const { role } = useWorkspace();
+  const { profile } = useAuth();
+  const isAdmin = role === "business_admin" || role === "super_admin";
+
+  // Load members from data adapter — tenant-scoped
+  const allMembers = getBusinessMembers(tenant);
+  const currentUserMember = getCurrentUserMember(tenant, profile?.id ?? "");
+  const currentUserRole: BusinessRole = currentUserMember?.role ?? "viewer";
+
   const [tab, setTab] = useState<"members" | "teams" | "invites">("members");
   const [query, setQuery] = useState("");
-  const [statusFilter, setStatusFilter] = useState<Status | "all">("all");
+  const [statusFilter, setStatusFilter] = useState<MemberStatus | "all">("all");
 
   const filtered = useMemo(() => {
-    return seed.filter((m) => {
+    return allMembers.filter((m) => {
       if (statusFilter !== "all" && m.status !== statusFilter) return false;
       if (!query) return true;
       const q = query.toLowerCase();
@@ -150,36 +98,73 @@ function MembersPage() {
         m.team.toLowerCase().includes(q)
       );
     });
-  }, [query, statusFilter]);
+  }, [allMembers, query, statusFilter]);
 
-  const invites = seed.filter((m) => m.status === "invited");
+  const invites = allMembers.filter((m) => m.status === "invited");
+  const activeCount = allMembers.filter((m) => m.status === "active").length;
+
+  // Derive teams from member data
+  const teams = useMemo(() => {
+    const map = new Map<string, { name: string; members: BusinessMember[] }>();
+    for (const m of allMembers) {
+      const existing = map.get(m.team);
+      if (existing) {
+        existing.members.push(m);
+      } else {
+        map.set(m.team, { name: m.team, members: [m] });
+      }
+    }
+    return Array.from(map.values());
+  }, [allMembers]);
+
+  // Workspace display name from membership
+  const workspaceName = currentUserMember
+    ? tenant.replace(/-/g, " ").replace(/\b\w/g, (c) => c.toUpperCase())
+    : tenant;
 
   return (
     <>
       <PageHeader
         title="Members & Teams"
-        description="Manage who can operate this workspace. Permission truth lives in the backend; the UI surfaces assigned roles."
+        description={`Manage who can operate this workspace. Permission truth lives in the backend; the UI surfaces assigned roles.`}
         meta={
           <>
             <Badge
               variant="secondary"
               className="h-5 border-0 bg-level-b/12 px-1.5 text-[10px] font-medium text-level-b"
             >
-              Level B · Tenant
+              Level B · {workspaceName}
             </Badge>
+            {currentUserMember && (
+              <Badge
+                variant="outline"
+                className={`h-5 border-0 px-1.5 text-[10px] font-medium ${roleStyles[currentUserMember.role]}`}
+              >
+                <Shield className="mr-1 h-3 w-3" />
+                Your role: {roleLabels[currentUserMember.role]}
+              </Badge>
+            )}
             <span className="text-xs text-muted-foreground">
-              {seed.filter((m) => m.status === "active").length} active · {invites.length} invited
+              {activeCount} active · {invites.length} invited
             </span>
           </>
         }
-        actions={<InviteMemberDialog />}
+        actions={
+          isAdmin ? (
+            <InviteMemberDialog teams={teams.map((t) => t.name)} />
+          ) : (
+            <Badge variant="outline" className="gap-1.5 font-normal text-muted-foreground">
+              <Info className="h-3 w-3" /> View only
+            </Badge>
+          )
+        }
       />
 
       <div className="space-y-5 p-6">
         {/* Tabs */}
         <div className="flex flex-wrap items-center gap-1 rounded-md border bg-card p-1 text-sm">
           {[
-            { id: "members" as const, label: "Members", icon: Users, count: seed.length },
+            { id: "members" as const, label: "Members", icon: Users, count: allMembers.length },
             { id: "teams" as const, label: "Teams", icon: UsersRound, count: teams.length },
             { id: "invites" as const, label: "Invitations", icon: Mail, count: invites.length },
           ].map(({ id, label, icon: Icon, count }) => {
@@ -219,7 +204,7 @@ function MembersPage() {
               </div>
               <Select
                 value={statusFilter}
-                onValueChange={(v) => setStatusFilter(v as Status | "all")}
+                onValueChange={(v) => setStatusFilter(v as MemberStatus | "all")}
               >
                 <SelectTrigger className="w-[160px]">
                   <Filter className="mr-1.5 h-3.5 w-3.5 text-muted-foreground" />
@@ -229,7 +214,7 @@ function MembersPage() {
                   <SelectItem value="all">All statuses</SelectItem>
                   <SelectItem value="active">Active</SelectItem>
                   <SelectItem value="invited">Invited</SelectItem>
-                  <SelectItem value="inactive">Inactive</SelectItem>
+                  <SelectItem value="suspended">Suspended</SelectItem>
                 </SelectContent>
               </Select>
             </div>
@@ -242,14 +227,15 @@ function MembersPage() {
                     <TableHead>Role</TableHead>
                     <TableHead>Team</TableHead>
                     <TableHead>Status</TableHead>
-                    <TableHead className="w-10" />
+                    <TableHead>Last active</TableHead>
+                    {isAdmin && <TableHead className="w-10" />}
                   </TableRow>
                 </TableHeader>
                 <TableBody>
                   {filtered.length === 0 ? (
                     <TableRow>
                       <TableCell
-                        colSpan={5}
+                        colSpan={isAdmin ? 6 : 5}
                         className="py-12 text-center text-sm text-muted-foreground"
                       >
                         No members match these filters.
@@ -257,59 +243,13 @@ function MembersPage() {
                     </TableRow>
                   ) : (
                     filtered.map((m) => (
-                      <TableRow key={m.id}>
-                        <TableCell>
-                          <div className="flex items-center gap-2.5">
-                            <Avatar className="h-7 w-7">
-                              <AvatarFallback className="bg-level-b/15 text-[10px] font-semibold text-level-b">
-                                {m.name
-                                  .split(" ")
-                                  .map((s) => s[0])
-                                  .slice(0, 2)
-                                  .join("")}
-                              </AvatarFallback>
-                            </Avatar>
-                            <div className="min-w-0 leading-tight">
-                              <div className="truncate text-sm font-medium">{m.name}</div>
-                              <div className="truncate text-[11px] text-muted-foreground">
-                                {m.email}
-                              </div>
-                            </div>
-                          </div>
-                        </TableCell>
-                        <TableCell>
-                          <Badge className={`border-0 font-normal ${roleStyle[m.role]}`}>
-                            <Shield className="mr-1 h-3 w-3" />
-                            {m.role}
-                          </Badge>
-                        </TableCell>
-                        <TableCell className="text-sm">{m.team}</TableCell>
-                        <TableCell>
-                          <Badge
-                            className={`border-0 font-normal capitalize ${statusStyle[m.status]}`}
-                          >
-                            {m.status}
-                          </Badge>
-                        </TableCell>
-                        <TableCell>
-                          <DropdownMenu>
-                            <DropdownMenuTrigger asChild>
-                              <Button variant="ghost" size="icon" className="h-7 w-7">
-                                <MoreHorizontal className="h-4 w-4" />
-                              </Button>
-                            </DropdownMenuTrigger>
-                            <DropdownMenuContent align="end">
-                              <DropdownMenuItem>Change role…</DropdownMenuItem>
-                              <DropdownMenuItem>Move to team…</DropdownMenuItem>
-                              <DropdownMenuItem>Resend invite</DropdownMenuItem>
-                              <DropdownMenuSeparator />
-                              <DropdownMenuItem className="text-destructive">
-                                Deactivate
-                              </DropdownMenuItem>
-                            </DropdownMenuContent>
-                          </DropdownMenu>
-                        </TableCell>
-                      </TableRow>
+                      <MemberRow
+                        key={m.id}
+                        member={m}
+                        isCurrentUser={m.userId === profile?.id}
+                        actorRole={currentUserRole}
+                        isAdmin={isAdmin}
+                      />
                     ))
                   )}
                 </TableBody>
@@ -326,7 +266,7 @@ function MembersPage() {
         {tab === "teams" && (
           <div className="grid gap-3 md:grid-cols-2 lg:grid-cols-3">
             {teams.map((t) => (
-              <Card key={t.id} className="p-4 shadow-xs">
+              <Card key={t.name} className="p-4 shadow-xs">
                 <div className="flex items-start justify-between">
                   <div className="flex items-center gap-2">
                     <span className="flex h-8 w-8 items-center justify-center rounded-md bg-level-b/12 text-level-b">
@@ -334,43 +274,46 @@ function MembersPage() {
                     </span>
                     <div>
                       <h3 className="text-sm font-semibold">{t.name}</h3>
-                      <p className="text-[11px] text-muted-foreground">{t.desc}</p>
+                      <p className="text-[11px] text-muted-foreground">
+                        {t.members.filter((m) => m.status === "active").length} active
+                      </p>
                     </div>
                   </div>
                   <Badge variant="outline" className="font-normal">
-                    {t.count} member{t.count === 1 ? "" : "s"}
+                    {t.members.length} member{t.members.length === 1 ? "" : "s"}
                   </Badge>
                 </div>
                 <div className="mt-3 flex -space-x-1.5">
-                  {seed
-                    .filter((m) => m.team === t.name)
-                    .slice(0, 5)
-                    .map((m) => (
-                      <Avatar key={m.id} className="h-6 w-6 ring-2 ring-card">
-                        <AvatarFallback className="bg-muted text-[9px] font-medium">
-                          {m.name
-                            .split(" ")
-                            .map((s) => s[0])
-                            .slice(0, 2)
-                            .join("")}
-                        </AvatarFallback>
-                      </Avatar>
-                    ))}
+                  {t.members.slice(0, 5).map((m) => (
+                    <Avatar key={m.id} className="h-6 w-6 ring-2 ring-card">
+                      <AvatarFallback className="bg-muted text-[9px] font-medium">
+                        {m.name
+                          .split(" ")
+                          .map((s) => s[0])
+                          .slice(0, 2)
+                          .join("")}
+                      </AvatarFallback>
+                    </Avatar>
+                  ))}
                 </div>
-                <div className="mt-3 flex justify-end">
-                  <Button size="sm" variant="ghost" className="h-7 px-2 text-xs">
-                    Manage
-                  </Button>
-                </div>
+                {isAdmin && (
+                  <div className="mt-3 flex justify-end">
+                    <Button size="sm" variant="ghost" className="h-7 px-2 text-xs">
+                      Manage
+                    </Button>
+                  </div>
+                )}
               </Card>
             ))}
-            <Card className="flex flex-col items-center justify-center gap-2 border-dashed p-6 text-center text-sm text-muted-foreground shadow-xs">
-              <UsersRound className="h-5 w-5" />
-              Create another team
-              <Button size="sm" variant="outline" className="mt-1">
-                New team
-              </Button>
-            </Card>
+            {isAdmin && (
+              <Card className="flex flex-col items-center justify-center gap-2 border-dashed p-6 text-center text-sm text-muted-foreground shadow-xs">
+                <UsersRound className="h-5 w-5" />
+                Create another team
+                <Button size="sm" variant="outline" className="mt-1">
+                  New team
+                </Button>
+              </Card>
+            )}
           </div>
         )}
 
@@ -388,7 +331,8 @@ function MembersPage() {
                     <TableHead>Email</TableHead>
                     <TableHead>Invited as</TableHead>
                     <TableHead>Team</TableHead>
-                    <TableHead className="w-32" />
+                    <TableHead>Invited</TableHead>
+                    {isAdmin && <TableHead className="w-32" />}
                   </TableRow>
                 </TableHeader>
                 <TableBody>
@@ -396,19 +340,24 @@ function MembersPage() {
                     <TableRow key={m.id}>
                       <TableCell className="text-sm">{m.email}</TableCell>
                       <TableCell>
-                        <Badge className={`border-0 font-normal ${roleStyle[m.role]}`}>
-                          {m.role}
+                        <Badge className={`border-0 font-normal ${roleStyles[m.role]}`}>
+                          {roleLabels[m.role]}
                         </Badge>
                       </TableCell>
                       <TableCell className="text-sm">{m.team}</TableCell>
-                      <TableCell className="text-right">
-                        <Button size="sm" variant="ghost">
-                          Resend
-                        </Button>
-                        <Button size="sm" variant="ghost" className="text-destructive">
-                          Revoke
-                        </Button>
+                      <TableCell className="text-xs text-muted-foreground">
+                        {formatTimeAgo(m.invitedAt)}
                       </TableCell>
+                      {isAdmin && (
+                        <TableCell className="text-right">
+                          <Button size="sm" variant="ghost">
+                            Resend
+                          </Button>
+                          <Button size="sm" variant="ghost" className="text-destructive">
+                            Revoke
+                          </Button>
+                        </TableCell>
+                      )}
                     </TableRow>
                   ))}
                 </TableBody>
@@ -421,7 +370,106 @@ function MembersPage() {
   );
 }
 
-function InviteMemberDialog() {
+// ── Member row component ────────────────────────────────────
+
+function MemberRow({
+  member,
+  isCurrentUser,
+  actorRole,
+  isAdmin,
+}: {
+  member: BusinessMember;
+  isCurrentUser: boolean;
+  actorRole: BusinessRole;
+  isAdmin: boolean;
+}) {
+  const initials = member.name
+    .split(" ")
+    .map((s) => s[0])
+    .slice(0, 2)
+    .join("");
+
+  const showActions = isAdmin && canManageMember(actorRole, member.role) && !isCurrentUser;
+
+  return (
+    <TableRow>
+      <TableCell>
+        <div className="flex items-center gap-2.5">
+          <Avatar className="h-7 w-7">
+            <AvatarFallback className="bg-level-b/15 text-[10px] font-semibold text-level-b">
+              {initials}
+            </AvatarFallback>
+          </Avatar>
+          <div className="min-w-0 leading-tight">
+            <div className="flex items-center gap-1.5 truncate text-sm font-medium">
+              {member.name}
+              {isCurrentUser && (
+                <Badge variant="outline" className="h-4 px-1 text-[9px] font-normal">
+                  You
+                </Badge>
+              )}
+            </div>
+            <div className="truncate text-[11px] text-muted-foreground">{member.email}</div>
+          </div>
+        </div>
+      </TableCell>
+      <TableCell>
+        <Badge className={`border-0 font-normal ${roleStyles[member.role]}`}>
+          <Shield className="mr-1 h-3 w-3" />
+          {roleLabels[member.role]}
+        </Badge>
+      </TableCell>
+      <TableCell className="text-sm">{member.team}</TableCell>
+      <TableCell>
+        <Badge className={`border-0 font-normal capitalize ${statusStyles[member.status]}`}>
+          {statusLabels[member.status]}
+        </Badge>
+      </TableCell>
+      <TableCell className="text-xs text-muted-foreground">
+        {member.lastActiveAt ? formatTimeAgo(member.lastActiveAt) : "—"}
+      </TableCell>
+      {isAdmin && (
+        <TableCell>
+          {showActions ? (
+            <MemberActions member={member} />
+          ) : (
+            <span className="text-[10px] text-muted-foreground">{isCurrentUser ? "" : "—"}</span>
+          )}
+        </TableCell>
+      )}
+    </TableRow>
+  );
+}
+
+// ── Member actions dropdown ─────────────────────────────────
+
+function MemberActions({ member }: { member: BusinessMember }) {
+  return (
+    <DropdownMenu>
+      <DropdownMenuTrigger asChild>
+        <Button variant="ghost" size="icon" className="h-7 w-7">
+          <MoreHorizontal className="h-4 w-4" />
+        </Button>
+      </DropdownMenuTrigger>
+      <DropdownMenuContent align="end">
+        <DropdownMenuItem>Change role…</DropdownMenuItem>
+        <DropdownMenuItem>Move to team…</DropdownMenuItem>
+        {member.status === "invited" && <DropdownMenuItem>Resend invite</DropdownMenuItem>}
+        <DropdownMenuSeparator />
+        {member.status === "suspended" ? (
+          <DropdownMenuItem>Reactivate</DropdownMenuItem>
+        ) : (
+          <DropdownMenuItem className="text-destructive">Suspend</DropdownMenuItem>
+        )}
+        <DropdownMenuItem className="text-destructive">Remove from workspace</DropdownMenuItem>
+      </DropdownMenuContent>
+    </DropdownMenu>
+  );
+}
+
+// ── Invite dialog ───────────────────────────────────────────
+
+function InviteMemberDialog({ teams }: { teams: string[] }) {
   const [open, setOpen] = useState(false);
   return (
     <Dialog open={open} onOpenChange={setOpen}>
@@ -451,7 +499,7 @@ function InviteMemberDialog() {
                   <SelectValue />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="business_admin">Business Admin</SelectItem>
+                  <SelectItem value="admin">Admin</SelectItem>
                   <SelectItem value="operator">Operator</SelectItem>
                   <SelectItem value="viewer">Viewer</SelectItem>
                 </SelectContent>
@@ -459,14 +507,14 @@ function InviteMemberDialog() {
             </div>
             <div className="space-y-1.5">
               <Label className="text-xs">Team</Label>
-              <Select defaultValue="fh">
+              <Select defaultValue={teams[0] ?? "General"}>
                 <SelectTrigger>
                   <SelectValue />
                 </SelectTrigger>
                 <SelectContent>
                   {teams.map((t) => (
-                    <SelectItem key={t.id} value={t.id}>
-                      {t.name}
+                    <SelectItem key={t} value={t}>
+                      {t}
                     </SelectItem>
                   ))}
                 </SelectContent>
@@ -489,4 +537,14 @@ function InviteMemberDialog() {
       </DialogContent>
     </Dialog>
   );
+}
+
+// ── Helpers ─────────────────────────────────────────────────
+
+function formatTimeAgo(iso: string): string {
+  try {
+    return formatDistanceToNow(new Date(iso), { addSuffix: true });
+  } catch {
+    return iso;
+  }
 }
